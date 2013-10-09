@@ -21,7 +21,7 @@ public class StateMachineAgent {
 	public static final int GOAL = 2;
 	
 	//Reset limit
-	public static final int MAX_RESETS = 5;
+	public static final int MAX_RESETS = 1;
 
 	// Turns debug printing on and off
 	boolean debug = true;
@@ -183,13 +183,13 @@ public class StateMachineAgent {
 	}
 	
 	public void smartReset() {
-		/*boolean successCode;
+		boolean successCode;
 		for(int i = 0; i < MAX_RESETS; i++) {
 			successCode = smartResetHelper();
 			if (successCode) {
 				return;
 			}
-		}*/
+		}
 		reset();
 	}
 	
@@ -201,8 +201,12 @@ public class StateMachineAgent {
 		char transitionCharacter;
 		boolean[] sensors;
 		int sensorEncoding;
+		int lastGoal = findLastGoal(episodicMemory.size()) + 1;
 		String action;
-		for (int i = matchedStringEndIndex + 1; i < episodicMemory.size(); i++) {
+		if (matchedStringEndIndex == -1) {
+			return false;
+		}
+		for (int i = matchedStringEndIndex + 1; i < lastGoal; i++) {
 			transitionCharacter = episodicMemory.get(i).charAt(0);
 			sensors = env.tick(transitionCharacter);
 			sensorEncoding = encodeSensors(sensors);
@@ -212,6 +216,7 @@ public class StateMachineAgent {
 				return true;
 			}
 			
+			//System.err.println(episodicMemory.get(i) + " " + action);
 			if (!episodicMemory.get(i).equals(action)) {
 				//We're lost, so attempt another reset
 				return false;
