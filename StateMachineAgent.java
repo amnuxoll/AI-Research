@@ -179,10 +179,23 @@ public class StateMachineAgent {
 		} while (!sensors[IS_GOAL]); // Keep going until we've found the goal
 	}
 	
+	public void smartReset() {
+		boolean successCode;
+		for(int i = 0; i < 5; i++) {
+			successCode = smartResetHelper();
+			if (successCode) {
+				return;
+			}
+		}
+		reset();
+		
+		
+	}
+	
 	/**
 	 * An intelligent reset method for the agent that resets by searching its previous moves
 	 */
-	public void smartReset() {
+	public boolean smartResetHelper() {
 		int matchedStringEndIndex = maxMatchedStringIndex();
 		char transitionCharacter;
 		boolean[] sensors;
@@ -195,15 +208,16 @@ public class StateMachineAgent {
 			action = "" + transitionCharacter + sensorEncoding;
 			episodicMemory.add(action);
 			if (sensorEncoding == GOAL) {
-				return;
+				return true;
 			}
 			
 			if (!episodicMemory.get(i).equals(action)) {
 				//We're lost, so attempt another reset
-				smartReset();
-				return;
+				return false;
 			}
 		}
+		
+		return false;
 	}
 	
 	private int maxMatchedStringIndex() {
@@ -341,9 +355,9 @@ public class StateMachineAgent {
 
 		System.out.print(ofSPECTRE.best);
 		System.out.println("\n\n\n");
-		/*for (int i = 0; i < ofSPECTRE.episodicMemory.size(); i++) {
+		for (int i = 0; i < ofSPECTRE.episodicMemory.size(); i++) {
 			System.out.println(ofSPECTRE.episodicMemory.get(i));
-		}*/
+		}
 		//envPathLengthTotal += envPaths[0].length();
 	}
 
