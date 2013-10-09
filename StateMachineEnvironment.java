@@ -39,7 +39,7 @@ public class StateMachineEnvironment {
 	private int currentState;
 	
 	//DEBUG
-	private boolean debug = true;
+	private boolean debug = false;
 
 	
 	public StateMachineEnvironment() {

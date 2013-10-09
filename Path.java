@@ -14,7 +14,7 @@ public class Path {
 	private ArrayList<Character> path;
 
 	//Debugging Variable
-	private boolean debug = true;
+	private boolean debug = false;
 
 	/**
 	 * initializes a path with an array of character 
