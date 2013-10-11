@@ -62,26 +62,13 @@ public class StateMachineAgent {
 	 * 		The path to the goal that was found
 	 */
 	public Path generatePath() {
-		Random random = new Random();
-		char toCheck;
-		ArrayList<Character> pass = new ArrayList<Character>();
-		boolean[] sensors;
-		int encodedSensorResult;
-
-		// Generate random steps until the goal is reached.  Record each
-		// step in 'pass'
-		do {
-			toCheck = alphabet[random.nextInt(alphabet.length)];
-			pass.add(toCheck); // Add current char to the string of characters that defines the path
-			sensors = env.tick(toCheck);
-			encodedSensorResult = encodeSensors(sensors);
-			episodicMemory.add("" + toCheck + encodedSensorResult);
-			
-		} while (!sensors[IS_GOAL]); // Keep going until we've found the goal
-
-		//return the result
-		best = new Path(pass);
-		// best.printpath();   // DEBUG
+		ArrayList<Character> randomPath = new ArrayList<Character>();
+		reset();
+		for (int i = 0; i < episodicMemory.size(); i++){
+			randomPath.add(i, episodicMemory.get(i).charAt(0));
+		}
+		
+		best = new Path(randomPath);
 		return best;
 	}
 
