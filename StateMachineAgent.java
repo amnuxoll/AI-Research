@@ -180,9 +180,6 @@ public class StateMachineAgent {
 			encodedSensorResult = encodeSensors(sensors);
 			episodicMemory.add("" + toCheck + encodedSensorResult);
 			
-			System.out.print("" + toCheck);
-			System.out.println("" + env.currentState);
-			
 		} while (!sensors[IS_GOAL]); // Keep going until we've found the goal
 	}
 	
@@ -217,7 +214,7 @@ public class StateMachineAgent {
 			for (int i = 0; i < alphabet.length; i++) {
 				memoryString.remove(memoryString.size() - 1);
 				memoryString.add("" + alphabet[i]);
-				if (matchString(memoryString)) {
+				if (!matchString(memoryString)) {
 					validActions.add(alphabet[i]);
 				}
 			}
