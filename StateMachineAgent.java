@@ -174,22 +174,101 @@ public class StateMachineAgent {
 		//Currently, the agent will just move randomly until it reaches the goal
 		//and magically resets itself
 		do {
-			toCheck = alphabet[random.nextInt(alphabet.length)];
+			//toCheck = alphabet[random.nextInt(alphabet.length)];
+			toCheck = generateAction();
 			sensors = env.tick(toCheck);
 			encodedSensorResult = encodeSensors(sensors);
 			episodicMemory.add("" + toCheck + encodedSensorResult);
 			
+			System.out.print("" + toCheck);
+			System.out.println("" + env.currentState);
+			
 		} while (!sensors[IS_GOAL]); // Keep going until we've found the goal
 	}
 	
+	/**
+	 * A helper method that generates an action for the dumb reset by matching the
+	 * shortest unseen string and taking the action at the end of that string
+	 * @return A character chosen from random among the valid actions
+	 */
+	private char generateAction() {
+		//The string of actions the Agent can take. This must be populated with
+		//actions at the end of strings the Agent has never seen before
+		ArrayList<Character> validActions = new ArrayList<Character>();
+		
+		//The memory string to match against the episodic memory
+		ArrayList<String> memoryString = new ArrayList<String>();
+		
+		//Add this to the memoryString so that we have something to replace
+		memoryString.add("a");
+		
+		//Our current index into the episodic memory. This is the index of the element
+		//we will add onto the front of the memoryString if the current set of 
+		//string matches fails
+		int currentMemoryBeforeStringIndex = episodicMemory.size() - 1;
+		
+		//The loop should terminate if we get valid actions or if we go beyond
+		//the size of the episodic memory
+		while (validActions.isEmpty() && currentMemoryBeforeStringIndex >= 0) {
+			
+			//For each character in the alphabet, replace the last element in the
+			//memoryString. Match the resulting string with the episodic memory, and
+			//add the current character to the list of Valid Actions if there is a match
+			for (int i = 0; i < alphabet.length; i++) {
+				memoryString.remove(memoryString.size() - 1);
+				memoryString.add("" + alphabet[i]);
+				if (matchString(memoryString)) {
+					validActions.add(alphabet[i]);
+				}
+			}
+			
+			//Extend the current string and move back in episodic memory
+			memoryString.add(0, episodicMemory.get(currentMemoryBeforeStringIndex));
+			currentMemoryBeforeStringIndex--;
+		}
+		
+		Random random = new Random();
+		return validActions.get(random.nextInt(validActions.size()));
+	}
+	
+	/**
+	 * A helper method that takes in a string of action/result pairs and checks
+	 * if that string exists in the episodic memory
+	 * @param actionString The string to match
+	 * @return True if the string was matched in the episodic memory, otherwise false
+	 */
+	private boolean matchString(ArrayList<String> actionString) {
+		int elementToMatchIndex = 0;
+		for(int i = 0; i < episodicMemory.size(); i++)
+		{
+			if (elementToMatchIndex < actionString.size() - 1) {
+				if (episodicMemory.get(i).equals(actionString.get(elementToMatchIndex))) {
+					elementToMatchIndex++;
+				}
+				else {
+					elementToMatchIndex = 0;
+				}
+			}
+			else {
+				if (episodicMemory.get(i).charAt(0) == actionString.get(elementToMatchIndex).charAt(0)){
+					return true;
+				}
+				else {
+					elementToMatchIndex = 0;
+				}
+			}
+		}
+		return false;
+	}
+	
 	public void smartReset() {
-		boolean successCode;
+		/*boolean successCode;
 		for(int i = 0; i < MAX_RESETS; i++) {
 			successCode = smartResetHelper();
 			if (successCode) {
 				return;
 			}
-		}
+		}*/
 		reset();
 	}
 	

@@ -36,7 +36,7 @@ public class StateMachineEnvironment {
 	private int[][] transition;
 	private char[] alphabet;
 	private String[] paths;
-	private int currentState;
+	public int currentState;
 	
 	//DEBUG
 	private boolean debug = false;
