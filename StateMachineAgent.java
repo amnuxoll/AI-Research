@@ -206,7 +206,7 @@ public class StateMachineAgent {
 		
 		//The loop should terminate if we get valid actions or if we go beyond
 		//the size of the episodic memory
-		while (validActions.isEmpty() && currentMemoryBeforeStringIndex >= 0) {
+		while (validActions.isEmpty() && currentMemoryBeforeStringIndex > findLastGoal(episodicMemory.size())) {
 			
 			//For each character in the alphabet, replace the last element in the
 			//memoryString. Match the resulting string with the episodic memory, and
@@ -225,7 +225,13 @@ public class StateMachineAgent {
 		}
 		
 		Random random = new Random();
-		return validActions.get(random.nextInt(validActions.size()));
+		
+		if(validActions.size() == 0){
+			return alphabet[random.nextInt(alphabet.length)];
+		}
+		else {
+			return validActions.get(random.nextInt(validActions.size()));
+		}
 	}
 	
 	/**
