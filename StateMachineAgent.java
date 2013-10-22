@@ -3,6 +3,7 @@ package passphraseReplacement;
 import java.util.ArrayList;
 import java.util.Random;
 
+
 public class StateMachineAgent {
 
 	// Instance variables
@@ -213,9 +214,12 @@ public class StateMachineAgent {
 		
 		Random random = new Random();
 		
+		//If no valid actions are generated, return a random alphabet character
 		if(validActions.size() == 0){
 			return alphabet[random.nextInt(alphabet.length)];
 		}
+		
+		//Otherwise, return a random action from among those that are valid
 		else {
 			return validActions.get(random.nextInt(validActions.size()));
 		}
@@ -228,21 +232,32 @@ public class StateMachineAgent {
 	 * @return True if the string was matched in the episodic memory, otherwise false
 	 */
 	private boolean matchString(ArrayList<String> actionString) {
-		int elementToMatchIndex = 0;
+		int elementToMatchIndex = 0; //The index of the element in actionString we are trying to match
 		for(int i = 0; i < episodicMemory.size(); i++)
 		{
 			if (elementToMatchIndex < actionString.size() - 1) {
+				
+				//If the element i in the episodic memory equals the current action in actionString,
+				//attempt to match the next element in actionString on the next iteration of the loop
 				if (episodicMemory.get(i).equals(actionString.get(elementToMatchIndex))) {
 					elementToMatchIndex++;
 				}
+				
+				//Otherwise, reset the index of the element in actionString we are trying to match, as
+				//we must now return to the beginning of the actionString (since our current string
+				//of matches was interrupted before the whole actionString was matched)
 				else {
 					elementToMatchIndex = 0;
 				}
 			}
 			else {
+				
+				//If we are on the last element in the actionString and we get a match, the whole string
+				//was matched
 				if (episodicMemory.get(i).charAt(0) == actionString.get(elementToMatchIndex).charAt(0)){
 					return true;
 				}
+				
 				else {
 					elementToMatchIndex = 0;
 				}
@@ -251,6 +266,10 @@ public class StateMachineAgent {
 		return false;
 	}
 	
+	/**
+	 * A more intelligent reset for the agent that will cause the agent to try to find a path to the goal
+	 * by examining its episodic memory
+	 */
 	public void smartReset() {
 		/*boolean successCode;
 		for(int i = 0; i < MAX_RESETS; i++) {
@@ -295,6 +314,12 @@ public class StateMachineAgent {
 		return false;
 	}
 	
+	/**
+	 * Finds the ending index of the longest substring in episodic memory before the previous goal
+	 * matching the final string of actions the agent has taken
+	 * @return The ending index of the longest substring matching the final string of actions
+	 *         the agent has taken
+	 */
 	private int maxMatchedStringIndex() {
 		int lastGoalIndex = findLastGoal(episodicMemory.size());
 		int maxStringIndex = -1;
@@ -315,12 +340,19 @@ public class StateMachineAgent {
 		return maxStringIndex;
 	}
 	
+	/**
+	 * Starts from a given index and the end of the Agent's episodic memory and moves backwards, returning
+	 * the number of consecutive matching characters
+	 * @param endOfStringIndex The index from which to start the backwards search
+	 * @return the number of consecutive matching characters
+	 */
 	private int matchedMemoryStringLength(int endOfStringIndex) {
 		int length = 0;
 		int indexOfMatchingAction = episodicMemory.size() - 1;
 		boolean match;
 		for (int i = endOfStringIndex; i >= 0; i--) {
 			match = episodicMemory.get(i).equals(episodicMemory.get(indexOfMatchingAction));
+			
 			if (match) {
 				length++;
 				indexOfMatchingAction--;
