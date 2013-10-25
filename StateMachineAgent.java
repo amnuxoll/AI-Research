@@ -20,9 +20,15 @@ public class StateMachineAgent {
 	public static final int NO_TRANSITION = 0;
 	public static final int TRANSITION_ONLY = 1;
 	public static final int GOAL = 2;
-	
+
 	//Reset limit
 	public static final int MAX_RESETS = 1;
+
+	//Tells the agent whether or not to use the curious reset instead of the random reset
+	private boolean curious = false;
+
+	//Tells the agent whether or not to use the reorientation reset
+	private boolean reorientation = true;
 
 	// Turns debug printing on and off
 	boolean debug = true;
@@ -68,7 +74,7 @@ public class StateMachineAgent {
 		for (int i = 0; i < episodicMemory.size(); i++){
 			randomPath.add(i, episodicMemory.get(i).charAt(0));
 		}
-		
+
 		best = new Path(randomPath);
 		return best;
 	}
@@ -94,7 +100,7 @@ public class StateMachineAgent {
 			sensors = env.tick(best.get(i));
 			int encodedSensorResult = encodeSensors(sensors);
 			episodicMemory.add("" + best.get(i) + encodedSensorResult);
-			
+
 			if (sensors[IS_GOAL]) {
 				//DEBUG
 				//System.out.println("Given path works");
@@ -158,19 +164,26 @@ public class StateMachineAgent {
 		Random random = new Random();
 		boolean[] sensors;
 		int encodedSensorResult;
-		
+
 		//Currently, the agent will just move randomly until it reaches the goal
 		//and magically resets itself
 		do {
-			//toCheck = alphabet[random.nextInt(alphabet.length)];
-			toCheck = generateAction();
+			if (curious) {
+				toCheck = generateAction();
+			}
+			else {
+				toCheck = generateRandomAction();
+			}
 			sensors = env.tick(toCheck);
 			encodedSensorResult = encodeSensors(sensors);
 			episodicMemory.add("" + toCheck + encodedSensorResult);
-			
+			/*if (episodicMemory.size() > 500000000) {
+				System.exit(0);
+			}*/
+
 		} while (!sensors[IS_GOAL]); // Keep going until we've found the goal
 	}
-	
+
 	/**
 	 * A helper method that generates an action for the dumb reset by matching the
 	 * shortest unseen string and taking the action at the end of that string
@@ -180,22 +193,22 @@ public class StateMachineAgent {
 		//The string of actions the Agent can take. This must be populated with
 		//actions at the end of strings the Agent has never seen before
 		ArrayList<Character> validActions = new ArrayList<Character>();
-		
+
 		//The memory string to match against the episodic memory
 		ArrayList<String> memoryString = new ArrayList<String>();
-		
+
 		//Add this to the memoryString so that we have something to replace
 		memoryString.add("a");
-		
+
 		//Our current index into the episodic memory. This is the index of the element
 		//we will add onto the front of the memoryString if the current set of 
 		//string matches fails
 		int currentMemoryBeforeStringIndex = episodicMemory.size() - 1;
-		
+
 		//The loop should terminate if we get valid actions or if we go beyond
 		//the size of the episodic memory
 		while (validActions.isEmpty() && currentMemoryBeforeStringIndex > findLastGoal(episodicMemory.size())) {
-			
+
 			//For each character in the alphabet, replace the last element in the
 			//memoryString. Match the resulting string with the episodic memory, and
 			//add the current character to the list of Valid Actions if there is a match
@@ -206,25 +219,31 @@ public class StateMachineAgent {
 					validActions.add(alphabet[i]);
 				}
 			}
-			
+
 			//Extend the current string and move back in episodic memory
 			memoryString.add(0, episodicMemory.get(currentMemoryBeforeStringIndex));
 			currentMemoryBeforeStringIndex--;
 		}
-		
+
 		Random random = new Random();
-		
+
 		//If no valid actions are generated, return a random alphabet character
 		if(validActions.size() == 0){
 			return alphabet[random.nextInt(alphabet.length)];
 		}
-		
+
 		//Otherwise, return a random action from among those that are valid
 		else {
 			return validActions.get(random.nextInt(validActions.size()));
 		}
 	}
-	
+
+	public char generateRandomAction() {
+		Random random = new Random();
+		return alphabet[random.nextInt(alphabet.length)];
+	}
+
+
 	/**
 	 * A helper method that takes in a string of action/result pairs and checks
 	 * if that string exists in the episodic memory
@@ -236,13 +255,13 @@ public class StateMachineAgent {
 		for(int i = 0; i < episodicMemory.size(); i++)
 		{
 			if (elementToMatchIndex < actionString.size() - 1) {
-				
+
 				//If the element i in the episodic memory equals the current action in actionString,
 				//attempt to match the next element in actionString on the next iteration of the loop
 				if (episodicMemory.get(i).equals(actionString.get(elementToMatchIndex))) {
 					elementToMatchIndex++;
 				}
-				
+
 				//Otherwise, reset the index of the element in actionString we are trying to match, as
 				//we must now return to the beginning of the actionString (since our current string
 				//of matches was interrupted before the whole actionString was matched)
@@ -251,13 +270,13 @@ public class StateMachineAgent {
 				}
 			}
 			else {
-				
+
 				//If we are on the last element in the actionString and we get a match, the whole string
 				//was matched
 				if (episodicMemory.get(i).charAt(0) == actionString.get(elementToMatchIndex).charAt(0)){
 					return true;
 				}
-				
+
 				else {
 					elementToMatchIndex = 0;
 				}
@@ -265,22 +284,26 @@ public class StateMachineAgent {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * A more intelligent reset for the agent that will cause the agent to try to find a path to the goal
 	 * by examining its episodic memory
 	 */
 	public void smartReset() {
-		/*boolean successCode;
-		for(int i = 0; i < MAX_RESETS; i++) {
-			successCode = smartResetHelper();
-			if (successCode) {
-				return;
+		if (reorientation) {
+			boolean successCode;
+			for(int i = 0; i < MAX_RESETS; i++) {
+				successCode = smartResetHelper();
+				if (successCode) {
+					return;
+				}
 			}
-		}*/
-		reset();
+		}
+		else {
+			reset();
+		}
 	}
-	
+
 	/**
 	 * An intelligent reset method for the agent that resets by searching its previous moves
 	 */
@@ -303,17 +326,21 @@ public class StateMachineAgent {
 			if (sensorEncoding == GOAL) {
 				return true;
 			}
-			
+
 			//System.err.println(episodicMemory.get(i) + " " + action);
 			if (!episodicMemory.get(i).equals(action)) {
 				//We're lost, so attempt another reset
 				return false;
 			}
+
+			//if (episodicMemory.size() > 5000000) {
+			//	System.exit(0);
+			//}
 		}
-		
+
 		return false;
 	}
-	
+
 	/**
 	 * Finds the ending index of the longest substring in episodic memory before the previous goal
 	 * matching the final string of actions the agent has taken
@@ -336,10 +363,10 @@ public class StateMachineAgent {
 				}
 			}
 		}
-		
+
 		return maxStringIndex;
 	}
-	
+
 	/**
 	 * Starts from a given index and the end of the Agent's episodic memory and moves backwards, returning
 	 * the number of consecutive matching characters
@@ -352,7 +379,7 @@ public class StateMachineAgent {
 		boolean match;
 		for (int i = endOfStringIndex; i >= 0; i--) {
 			match = episodicMemory.get(i).equals(episodicMemory.get(indexOfMatchingAction));
-			
+
 			if (match) {
 				length++;
 				indexOfMatchingAction--;
@@ -361,11 +388,11 @@ public class StateMachineAgent {
 				return length;
 			}
 		}
-		
+
 		return length;
 	}
-	
-	
+
+
 	/**
 	 * Searches backwards through the list of move-result pairs from the given index
 	 * @param toStart The index from which to start the backwards search
@@ -379,7 +406,7 @@ public class StateMachineAgent {
 		}
 		return -1;
 	}
-	
+
 	/**
 	 * Takes in an agent's sensor data and encodes it into an integer
 	 * @param sensors The agent's sensor data
@@ -387,22 +414,22 @@ public class StateMachineAgent {
 	 */
 	private int encodeSensors(boolean[] sensors) {
 		int encodedSensorResult;
-		
+
 		if (sensors[IS_GOAL]) {
 			encodedSensorResult = GOAL;
 		}
-		
+
 		else if (sensors[IS_NEW_STATE]) {
 			encodedSensorResult = TRANSITION_ONLY;
 		}
-		
+
 		else {
 			encodedSensorResult = NO_TRANSITION;
 		}
-		
+
 		return encodedSensorResult;
 	}
-	
+
 	/**
 	 * runs multiple trials wherein a random state machine is solved and the
 	 * resulting 'best passphrase' for each is analyzed
@@ -412,50 +439,51 @@ public class StateMachineAgent {
 		//CSV output heading line
 		System.out.println("NumStates, AlphaSize, NumTransition, AvgBestPath, AvgBestAgentPath, AvgEpisodicMemorySize");
 
+		int alphaSize = 15;
+		int numTrans = 10;
+		for(int numStates = 5; numStates <= 100; ++numStates)
+		{
+			//for(int alphaSize = 5; alphaSize <= 26; alphaSize += 3)
+			//{
+			// for(int numTrans = alphaSize / 2; numTrans <= alphaSize; numTrans += 2)
+			// {
+			StateMachineEnvironment.NUM_STATES = numStates;
+			StateMachineEnvironment.GOAL_STATE = numStates - 1;
+			StateMachineEnvironment.ALPHABET_SIZE = alphaSize;
+			StateMachineEnvironment.NUM_TRANSITIONS = numTrans;
 
-        for(int numStates = 5; numStates <= 100; ++numStates)
-        {
-            for(int alphaSize = 5; alphaSize <= 26; alphaSize += 3)
-            {
-                for(int numTrans = alphaSize / 2; numTrans <= alphaSize; numTrans += 2)
-                {
-                    StateMachineEnvironment.NUM_STATES = numStates;
-                    StateMachineEnvironment.GOAL_STATE = numStates - 1;
-                    StateMachineEnvironment.ALPHABET_SIZE = alphaSize;
-                    StateMachineEnvironment.NUM_TRANSITIONS = numTrans;
 
-					
-                    int trials = 25;
-                    int pathLengthTotal  = 0;
-                    int envPathLengthTotal = 0;
-                    int episodicMemorySizeTotal = 0;
-                    StateMachineAgent ofSPECTRE;
+			int trials = 25;
+			int pathLengthTotal  = 0;
+			int envPathLengthTotal = 0;
+			int episodicMemorySizeTotal = 0;
+			StateMachineAgent ofSPECTRE;
 
-                    for (int i = 0; i < trials; i++) {
-                        ofSPECTRE = new StateMachineAgent();
-                        ofSPECTRE.bruteForce();
+			for (int i = 0; i < trials; i++) {
+				ofSPECTRE = new StateMachineAgent();
+				ofSPECTRE.bruteForce();
 
-                        String [] envPaths = ofSPECTRE.env.getPaths();
+				String [] envPaths = ofSPECTRE.env.getPaths();
 
-                        pathLengthTotal += ofSPECTRE.best.size();
-                        envPathLengthTotal += envPaths[0].length();
-                        episodicMemorySizeTotal += ofSPECTRE.episodicMemory.size();
-                    }
+				pathLengthTotal += ofSPECTRE.best.size();
+				envPathLengthTotal += envPaths[0].length();
+				episodicMemorySizeTotal += ofSPECTRE.episodicMemory.size();
+			}
 
-                    double agentLengthAvg = (double)pathLengthTotal/(double)trials;
-                    double envLengthAvg = (double)envPathLengthTotal/(double)trials;
-                    double episodicMemorySizeAvg = (double)episodicMemorySizeTotal/(double)trials;
+			double agentLengthAvg = (double)pathLengthTotal/(double)trials;
+			double envLengthAvg = (double)envPathLengthTotal/(double)trials;
+			double episodicMemorySizeAvg = (double)episodicMemorySizeTotal/(double)trials;
 
-                    System.out.printf("%d, %d, %d, %g, %g, %g\n",
-                                      numStates, alphaSize, numTrans,
-                                      envLengthAvg, agentLengthAvg, episodicMemorySizeAvg);
+			System.out.printf("%d, %d, %d, %g, %g, %g\n",
+					numStates, alphaSize, numTrans,
+					envLengthAvg, agentLengthAvg, episodicMemorySizeAvg);
 
-                    // System.out.println("Average shortest path guessed by agent: " + agentLengthAvg);
-                    // System.out.println("Average shortest path generated by environment: " + envLengthAvg);
+			// System.out.println("Average shortest path guessed by agent: " + agentLengthAvg);
+			// System.out.println("Average shortest path generated by environment: " + envLengthAvg);
 
-                }
-            }
-        }
+			// }
+			//}
+		}
 
 		/*StateMachineAgent ofSPECTRE;
 		ofSPECTRE = new StateMachineAgent();
