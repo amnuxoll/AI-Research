@@ -119,8 +119,6 @@ public class StateMachineAgent {
 		//System.out.println("Given path fails");
 
 		// If we make it through the entire loop, the path was unsuccessful
-		smartReset();
-		resetCount++;
 		return false;
 	}
 
@@ -157,9 +155,30 @@ public class StateMachineAgent {
 				smartReset();
 				resetCount++;
 				trimmed.add(i, removed);
+				
+				//Set the best path equal to the reset path if the reset path is shorter
+				Path maybeBest = getMostRecentPath();
+				if (maybeBest.size() < best.size()) {
+					best = maybeBest;
+				}
 			}
 		}
 		return trimmed;
+	}
+	
+	/**
+	 * getMostRecentPath
+	 * 
+	 * Gets the most recent path present in Episodic Memory
+	 * @return The most recent path in episodic memory
+	 */
+	public Path getMostRecentPath() {
+		int lastGoal = findLastGoal(episodicMemory.size() - 2) + 1;
+		ArrayList<Character> pathChars = new ArrayList<Character>();
+		for (int i = lastGoal; i < episodicMemory.size(); i++) {
+			pathChars.add(episodicMemory.get(i).charAt(0));
+		}
+		return new Path(pathChars);
 	}
 
 	/**
