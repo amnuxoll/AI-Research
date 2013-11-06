@@ -21,11 +21,15 @@ public class StateMachineAgent {
 	public static final int TRANSITION_ONLY = 1;
 	public static final int GOAL = 2;
 
+	//Global state data
+	private ArrayList<int[]> equivalentStates;
+	private ArrayList<int[]> nonEquivalentStates;
+	private ArrayList<int[]> agentTransitionTable;
+	public static final int UNKNOWN_TRANSITION = -1; //Used to represent an unknonwn transition in the transition table
+	
+	
 	//Reset limit
 	public static final int MAX_RESETS = 1;
-
-	//Tells the agent whether or not to use the curious reset instead of the random reset
-	private boolean curious = false;
 
 	//Tells the agent whether or not to use the reorientation reset
 	private boolean reorientation = true;
@@ -44,6 +48,9 @@ public class StateMachineAgent {
 		env = new StateMachineEnvironment();
 		alphabet = env.getAlphabet();
 		episodicMemory = new ArrayList<Episode>();
+		equivalentStates = new ArrayList<int[]>();
+		nonEquivalentStates = new ArrayList<int[]>();
+		agentTransitionTable = new ArrayList<int[]>();
 	}
 
 	/**

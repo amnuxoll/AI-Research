@@ -151,23 +151,32 @@ public class StateMachineEnvironment {
 		}		
 	}
 	
-	/**
-	 * A method which iterates through and prints out
-	 * the two-dimension array that represents the state machine
-	 */
-	public void printStateMachine() {
-		System.out.print("[");
-		for (int i = 0; i < NUM_STATES; i++) {
-			if (i != 0) {
-				System.out.println(" ");
-			}
-			for (int j = 0; j < alphabet.length; j++) {
-				System.out.print(transition[i][j] + ", ");
-			}
-		}
-		System.out.println("]");
-		
-	}
+	 /**
+     * A method which iterates through and prints out
+     * the two-dimension array that represents the state machine
+     */
+    public void printStateMachine() {
+        System.out.print("     ");
+        for(int i = 0; i < ALPHABET_SIZE; ++i) {
+            System.out.printf("%3c", alphabet[i]);
+        }
+        System.out.println();
+
+        for (int i = 0; i < NUM_STATES; i++) {
+            System.out.printf("%3d: ", i);
+
+            for (int j = 0; j < alphabet.length; j++) {
+                System.out.printf("%3d", transition[i][j]);
+            }
+            System.out.println();
+        }
+
+        System.out.print("     ");
+        for(int i = 0; i < ALPHABET_SIZE; ++i) {
+            System.out.printf("%3c", alphabet[i]);
+        }
+        System.out.println();
+    }
 	
 	/**
 	 * Resets the current state back to the initial state
