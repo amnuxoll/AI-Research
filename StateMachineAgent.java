@@ -27,6 +27,15 @@ public class StateMachineAgent {
 	private ArrayList<int[]> agentTransitionTable;
 	public static final int UNKNOWN_TRANSITION = -1; //Used to represent an unknonwn transition in the transition table
 	
+	// The state the agent is in based off it's own version of the state machine
+	private int currentState;
+	// A path which the agent expects will take it to the goal
+	// In other words, a method of testing it's hypothesis about two states being the same
+	private ArrayList<Episode> currentPlan;
+	// The hypothesis that the agent is currently testing
+	// The agent belives currentHypothesis[0] == currentHypothesis[1] where each entry is a state in the FSM
+	private int[] currentHypothesis;
+	
 	
 	//Reset limit
 	public static final int MAX_RESETS = 1;
