@@ -25,16 +25,24 @@ public class StateMachineAgent {
 	private ArrayList<int[]> equivalentStates;
 	private ArrayList<int[]> nonEquivalentStates;
 	private ArrayList<int[]> agentTransitionTable;
-	public static final int UNKNOWN_TRANSITION = -1; //Used to represent an unknonwn transition in the transition table
+	public static final int UNKNOWN_TRANSITION = -1; //Used to represent an unknown transition in the transition table
+	public static final int GOAL_STATE = 0;
 	
 	// The state the agent is in based off it's own version of the state machine
-	private int currentState;
+	private int currentState = 1;
 	// A path which the agent expects will take it to the goal
 	// In other words, a method of testing it's hypothesis about two states being the same
 	private ArrayList<Episode> currentPlan;
+	//The numerical id to assign to the next new state we see
+	private int nextStateNumber = 2;
+	// A variable to indicate whether or not the agent has a current plan to try
+	private boolean hasPlan = false;
 	// The hypothesis that the agent is currently testing
-	// The agent belives currentHypothesis[0] == currentHypothesis[1] where each entry is a state in the FSM
+	// The agent believes currentHypothesis[0] == currentHypothesis[1] where each entry is a state in the FSM
 	private int[] currentHypothesis;
+	// As the agent adds states to it's personal mapping of the environment, it has to number them
+	// accordingly. This variable keeps track of the next stateID it has not yet used
+	private int currentStateID = 1;
 	
 	
 	//Reset limit
@@ -60,6 +68,14 @@ public class StateMachineAgent {
 		equivalentStates = new ArrayList<int[]>();
 		nonEquivalentStates = new ArrayList<int[]>();
 		agentTransitionTable = new ArrayList<int[]>();
+		int[] zeroRow = new int[alphabet.length];
+		int[] firstState = new int[alphabet.length];
+		for (int i = 0; i < zeroRow.length; i++) {
+			zeroRow[i] = UNKNOWN_TRANSITION;
+			firstState[i] = UNKNOWN_TRANSITION;
+		}
+		agentTransitionTable.add(zeroRow);
+		agentTransitionTable.add(firstState);
 	}
 
 	/**
@@ -90,8 +106,13 @@ public class StateMachineAgent {
 	 */
 	public Path generatePath() {
 		ArrayList<Character> randomPath = new ArrayList<Character>();
+		
+		//Use our reset method to make random actions until we reach the goal
 		reset();
 		resetCount++;
+		
+		//Pull the episodes we've just created out of memory and parse them into
+		//a path
 		for (int i = 0; i < episodicMemory.size(); i++){
 			randomPath.add(i, episodicMemory.get(i).getCommand());
 		}
@@ -220,7 +241,12 @@ public class StateMachineAgent {
 
 		} while (!sensors[IS_GOAL]); // Keep going until we've found the goal
 	}
-
+	
+	/**
+	 * Generates a random action for the Agent to take
+	 * 
+	 * @return A random action for the Agent to take
+	 */
 	public char generateRandomAction() {
 		Random random = new Random();
 		return alphabet[random.nextInt(alphabet.length)];
@@ -414,7 +440,62 @@ public class StateMachineAgent {
 
 		return encodedSensorResult;
 	}
-
+	
+	public void mappingAlgorithm() {
+		if (best == null) {
+			makeRandomMove();
+		}
+		else {
+			
+		}
+	}
+	
+	/**
+	 * Returns the index of the given character in the alphabet array
+	 * @param toCheck the character to find the index of
+	 * @return the index of toCheck
+	 */
+	private int indexOfCharacter(char toCheck) {
+		for (int i = 0; i < alphabet.length; i++) {
+			if (alphabet[i] == toCheck) {
+				return i;
+			}
+		}
+		
+		return -1;
+	}
+	
+	/**
+	 * Makes the Agent take a random move, record it in episodic memory, and update its transition
+	 * table
+	 * @return The sensor encoding from the action the Agent has taken
+	 */
+	private int makeRandomMove() { 
+		char action = generateRandomAction();
+		boolean[] sensors = env.tick(action);
+		int sensorEncoding = encodeSensors(sensors);
+		int characterIndex = indexOfCharacter(action);
+		if(sensorEncoding != IS_GOAL) {
+			agentTransitionTable.get(currentState)[characterIndex] = nextStateNumber;
+			currentStateID = nextStateNumber;
+			nextStateNumber++;
+			int[] row = new int[alphabet.length];
+			for (int i = 0; i < row.length; i++) {
+				row[i] = UNKNOWN_TRANSITION;
+			}
+			agentTransitionTable.add(row);
+		}
+		else {
+			agentTransitionTable.get(currentState)[characterIndex] = GOAL_STATE;
+			currentStateID = GOAL_STATE;
+		}
+		episodicMemory.add(new Episode(action, sensorEncoding, currentStateID));
+		return sensorEncoding;
+	}
+	
+	public void addNewState()  { 
+		
+	}
 
 	/**
 	 * runs multiple trials wherein a random state machine is solved and the
@@ -422,32 +503,10 @@ public class StateMachineAgent {
 	 */
 	public static void main(String [ ] args)
 	{
-		//CSV output heading line
-		//System.out.println("NumStates, AlphaSize, NumTransition, AvgBestPath, AvgBestAgentPath, AvgEpisodicMemorySize");
-
-		/*int alphaSize = 20;
-		int numTrans = 16;
-
-		for(int numStates = 5; numStates <= 100; ++numStates)
-		{
-			for(int alphaSize = 5; alphaSize <= 26; alphaSize += 3)
-				{
-					for(int numTrans = alphaSize / 2; numTrans <= alphaSize; numTrans += 2)
-					{*/
 		StateMachineEnvironment.NUM_STATES = 10;
 		StateMachineEnvironment.GOAL_STATE = 10 - 1;
 		StateMachineEnvironment.ALPHABET_SIZE = 8;
 		StateMachineEnvironment.NUM_TRANSITIONS = 5;
-
-
-		/*int trials = 25;
-						int pathLengthTotal  = 0;
-						int envPathLengthTotal = 0;
-						int episodicMemorySizeTotal = 0;
-						int totalResets = 0;
-						int totalReorientationFailures = 0;*/
-
-		/*for (int i = 0; i < trials; i++) {*/
 
 		for(int i= 0; i < 10; ++i) {
 			StateMachineAgent ofSPECTRE;
@@ -465,46 +524,5 @@ public class StateMachineAgent {
 
 			System.out.println("----------------------------");
 		}
-
-
-		//String [] envPaths = ofSPECTRE.env.getPaths();
-
-		/*pathLengthTotal += ofSPECTRE.best.size();
-							envPathLengthTotal += envPaths[0].length();
-							episodicMemorySizeTotal += ofSPECTRE.episodicMemory.size();
-							totalResets += ofSPECTRE.resetCount;
-							totalReorientationFailures += ofSPECTRE.reorientFailures;*/
-		/*}
-
-						double agentLengthAvg = (double)pathLengthTotal/(double)trials;
-						double envLengthAvg = (double)envPathLengthTotal/(double)trials;
-						double episodicMemorySizeAvg = (double)episodicMemorySizeTotal/(double)trials;
-						double resetAvg = (double)totalResets/(double)trials;
-						double failureAvg = (double)totalReorientationFailures/(double)trials;
-
-						System.out.printf("%d, %d, %d, %g, %g, %g, %g, %g\n",
-								numStates, alphaSize, numTrans,
-								envLengthAvg, agentLengthAvg, episodicMemorySizeAvg, resetAvg, failureAvg);
-
-						System.out.println("Average shortest path guessed by agent: " + agentLengthAvg);
-						System.out.println("Average shortest path generated by environment: " + envLengthAvg);
-
-					}
-				}
-			}
-
-			StateMachineAgent ofSPECTRE;
-			ofSPECTRE = new StateMachineAgent();
-			ofSPECTRE.bruteForce();
-
-			String [] envPaths = ofSPECTRE.env.getPaths();
-
-			System.out.print(ofSPECTRE.best);
-			System.out.println("\n\n\n");
-			for (int i = 0; i < ofSPECTRE.episodicMemory.size(); i++) {
-				System.out.println(ofSPECTRE.episodicMemory.get(i));
-			}
-		}*/
-
 	}
 }
