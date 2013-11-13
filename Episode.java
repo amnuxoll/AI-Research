@@ -2,9 +2,9 @@ package passphraseReplacement;
 
 public class Episode { 
 	
-	private char command;
-	private int sensorValue;
-	private int stateID;
+	public char command;
+	public int sensorValue;
+	public int stateID;
 	
 	public Episode(char cmd, int sensor, int state) {
 		command = cmd;
@@ -13,15 +13,5 @@ public class Episode {
 		
 	}
 	
-	public char getCommand(){
-		return command;
-	}
-	
-	public int getSensorValue(){
-		return sensorValue;
-	}
-	
-	public int getStateID(){ 
-		return stateID;
-	}
+    
 }
