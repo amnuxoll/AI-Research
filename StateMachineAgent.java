@@ -27,6 +27,7 @@ public class StateMachineAgent {
 	private ArrayList<int[]> agentTransitionTable;
 	public static final int UNKNOWN_TRANSITION = -1; //Used to represent an unknown transition in the transition table
 	public static final int GOAL_STATE = 0;
+	public static final int INIT_STATE = 1;
     public static final char UNKNOWN_COMMAND = ' '; //a character guaranteed not
                                                    //to be in the alphabet
 
@@ -357,8 +358,10 @@ public class StateMachineAgent {
 	}
 
 	/**
-	 * Finds the ending index of the longest substring in episodic memory before the previous goal
-	 * matching the final string of actions the agent has taken
+	 * Finds the ending index of the longest substring in episodic memory before
+	 * the previous goal matching the final string of actions the agent has
+	 * taken
+     *
 	 * @return The ending index of the longest substring matching the final string of actions
 	 *         the agent has taken
 	 */
@@ -448,11 +451,13 @@ public class StateMachineAgent {
     /**
      * makePlanToState
      *
-     * creates a new plan to reach a given state (see {@link #currentPlan})
+     * creates a new plan to reach a given state (see {@link #currentPlan}) from
+     * a given state
      *
-     * @param targetId  id of the state we want to reach
+     * @param startID   id of the state to start at
+     * @param targetID  id of the state we want to reach
      */
-    private void makePlanToState(int targetId) {
+    private void makePlanToState(int startID, int targetID) {
         //H & P will write this XD
     }
      
@@ -525,7 +530,7 @@ public class StateMachineAgent {
 
         //make a plan to reach that unknown state
         this.currentPlan = null;
-        makePlanToState(state);
+        makePlanToState(this.currentState, state);
 
         //if something went wrong just act randomly
         //(I don't think this should ever happen.)
@@ -564,6 +569,41 @@ public class StateMachineAgent {
         //%%%TBD
     }
        
+    /**
+     * cleanupFailedPlan
+     *
+     * if a plan fails, then the current hypotheses are assumed to be
+     * incorrect.  The two states are added the {@link #nonEquivalentStates}
+     * list.  A new state is added to the transition table and a new epmem is
+     * added to the episodic memory that indicates we transitioned to that
+     * state. this.currentState is also updated.
+                 - if you were testing an equivalency then your
+                   hypothesis becomes false.  Record the non-equivalency
+                   appropriately
+
+                 - otherwise you must have been trying to get to a
+                   state as per 7d above.  I'm not sure what to do
+                   here as this indicates that a previous equivalency
+                   is actually false.  Ignore for now.     
+     */
+    private void cleanupFailedPlan() {
+        //%%%TBD
+    }
+
+
+    /**
+     * isCompatibleRow
+     *
+     * given two rows in the transition table, this method verifies that they
+     * are "compatible" i.e., all corresponding entries that are both not
+     * unknown are the same value.
+     *
+     */
+    private boolean isCompatibleRow(int[] row1, int[] row2) {
+        //%%%TBD
+
+        return false;
+    }
 
     /**
      * makeMove
@@ -575,6 +615,7 @@ public class StateMachineAgent {
      */
     private void makeMove(char cmd) {
 		boolean[] sensors = env.tick(cmd);
+        int mergedSensors = encodeSensors(sensors);
 
         //Complete the current episode with the given command
         Episode currEp = this.episodicMemory.get(this.episodicMemory.size() - 1);
@@ -582,38 +623,86 @@ public class StateMachineAgent {
 
         //if we're in the middle of a plan it needs to be updated
         if (this.currentPlan != null) {
-            //if the sensors match the plan's expectation update the plan and
-            //the current state
-            int mergedSensors = encodeSensors(sensors);
+
+            //Advance the plan and verify that the sensors match
+            this.planIndex++;
             Episode currPlanEp = this.currentPlan.get(this.planIndex);
-            if (mergedSensors == currPlanEp.sensorValue) {
+            if (currPlanEp.sensorValue != mergedSensors) {
+                //Plan has failed
+                cleanupFailedPlan();
+            }
 
-                //Add a new episode for this state
-                
-                
-                //Plan is successful so far so advance to the next step
-                this.planIndex++;
+            //Add an episode that reflects our belief that this hypothesis is
+            //correct
+            Episode now = new Episode(UNKNOWN_COMMAND, mergedSensors, currPlanEp.stateID);
+            episodicMemory.add(now);
+            this.currentState = currPlanEp.stateID;
+            
 
-                //if the plan is not complete then we're done
-                if (planIndex < this.currentPlan.size()) {
-                    return;
+            //If we've reached the goal episode for the plan the remove it
+            //And verify all hypotheses
+            if (this.planIndex == this.currentPlan.size() - 1) {
+                this.currentPlan = null;
+                //if this was a plan to reach the goal then any hypothetic
+                //equivalencies need to be accepted
+                if (currPlanEp.stateID == INIT_STATE) {
+                    acceptCurrentHypothesis();
                 }
-                
-
-                //if we've completed the plan, remove it
-                if (planIndex == this.currentPlan.size()) {
-                    this.currentPlan = null;
-                    //if this was a plan to reach the goal then any hypothetic
-                    //equivalencies need to be accepted
-                    if (currPlanEp.stateID == GOAL_STATE) {
-                        acceptCurrentHypothesis();
-                    }
-                }
-                
-                
-                
             }
         }
+
+        //This 'else' covers the the case where there was no plan.  The agent
+        //has just taken a random or semi-random action
+        else {
+            //Examine the transition to extract what state I believe I'm in
+            Episode prev = episodicMemory.get(episodicMemory.size() - 1);
+            int[] row = agentTransitionTable.get(prev.stateID);
+            this.currentState = row[cmd];
+
+            //If I don't know where I am create a new state and update the table
+            if (this.currentState == UNKNOWN_TRANSITION) {
+                //if I just reached the goal then I know that I'm at the init
+                //state now
+                if (mergedSensors == GOAL) {
+                    this.currentState = INIT_STATE;
+                    row[cmd] = GOAL_STATE;
+                }
+                //Otherwise create a new state for this new circumstance
+                else {
+                    currentStateID++;
+                    row[cmd] = currentStateID;
+                }
+            }
+            
+            //Add an episode to reflect what just happened
+            Episode now = new Episode(UNKNOWN_COMMAND, mergedSensors, this.currentState);
+            episodicMemory.add(now);
+            this.currentState = currentStateID;
+
+            //Find data about previous state that may be the same as the current
+            //state
+            int equivIndex = maxMatchedStringIndex();
+            Episode equivEpisode = episodicMemory.get(equivIndex);
+            int[] equivRow = agentTransitionTable.get(equivEpisode.stateID);
+
+            //verify this equiv state has a compatible transition table entry to
+            //current state
+            if (!isCompatibleRow(row, equivRow)) return;
+
+            //%%%TBD: verify that we haven't already discovered that these
+            //states aren't equal
+
+            //hypothesize that equiv state equals the current state
+            currentHypothesis = new int[2];
+            currentHypothesis[0] = equivEpisode.stateID;
+            currentHypothesis[1] = this.currentState;
+
+            //Make a plan to reach the goal based upon the hypothesis
+            makePlanToState(equivEpisode.stateID, GOAL_STATE);
+            
+        }//else
+
+                
         
     }//makeMove
      
