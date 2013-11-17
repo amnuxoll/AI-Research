@@ -600,9 +600,19 @@ public class StateMachineAgent {
      *
      */
     private boolean isCompatibleRow(int[] row1, int[] row2) {
-        //%%%TBD
+    	// Go through each entry in the rows to compare them
+        for(int i = 0; i < row1.length; i++) { 
+        	// If the rows are not equivalent
+        	if(row1[i] != row2[i]) {
+        		// And neither of them are unknown, the rows are not equivalent
+        		if( !(row1[i] == UNKNOWN_TRANSITION || row2[i] == UNKNOWN_TRANSITION)){
+        			return false;
+        		}
+        	}
+        }
+        
+        return true;
 
-        return false;
     }
 
     /**
