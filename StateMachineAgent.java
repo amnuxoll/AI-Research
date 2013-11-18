@@ -75,6 +75,7 @@ public class StateMachineAgent {
 		agentTransitionTable = new ArrayList<int[]>();
 		int[] zeroRow = new int[alphabet.length];
 		int[] firstState = new int[alphabet.length];
+		//%%%TODO: Make the first element in a transition row the number of that state
 		for (int i = 0; i < zeroRow.length; i++) {
 			zeroRow[i] = UNKNOWN_TRANSITION;
 			firstState[i] = UNKNOWN_TRANSITION;
@@ -566,7 +567,26 @@ public class StateMachineAgent {
      there are, then they are the same state, merge them.
      */
     private void acceptCurrentHypothesis() {
-        //%%%TBD
+        equivalentStates.add(currentHypothesis);
+        mergeTwoStates(currentHypothesis[0], currentHypothesis[1]);
+        //%%%TBD: Should add an element to each transition row saying which state it is, since
+        //rows will be deleted from the table and the state number will stop being an index
+        for (int i = 0; i < agentTransitionTable.size(); i++) {
+        	for (int j = i + 1; j < agentTransitionTable.size(); j++) {
+        		if (isCompatibleRow(agentTransitionTable.get(i), agentTransitionTable.get(j))) {
+        			mergeTwoStates(i, j);
+        		}
+        	}
+        }
+    }
+    
+    /**
+     * mergeTwoStates
+     * 
+     * Takes two equivalent states and merges them together
+     */
+    private void mergeTwoStates(int state1, int state2) {
+    	//%%%TBD
     }
        
     /**
@@ -587,7 +607,7 @@ public class StateMachineAgent {
                    is actually false.  Ignore for now.     
      */
     private void cleanupFailedPlan() {
-        //%%%TBD
+        //TBD
     }
 
 
