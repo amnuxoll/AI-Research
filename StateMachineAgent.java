@@ -459,7 +459,8 @@ public class StateMachineAgent {
      * @param targetID  id of the state we want to reach
      */
     private void makePlanToState(int startID, int targetID) {
-        //H & P will write this XD
+        //%%%TBD
+    	
     }
      
     
@@ -569,8 +570,6 @@ public class StateMachineAgent {
     private void acceptCurrentHypothesis() {
         equivalentStates.add(currentHypothesis);
         mergeTwoStates(currentHypothesis[0], currentHypothesis[1]);
-        //%%%TBD: Should add an element to each transition row saying which state it is, since
-        //rows will be deleted from the table and the state number will stop being an index
         for (int i = 0; i < agentTransitionTable.size(); i++) {
         	for (int j = i + 1; j < agentTransitionTable.size(); j++) {
         		if (isCompatibleRow(agentTransitionTable.get(i), agentTransitionTable.get(j))) {
@@ -586,7 +585,21 @@ public class StateMachineAgent {
      * Takes two equivalent states and merges them together
      */
     private void mergeTwoStates(int state1, int state2) {
-    	//%%%TBD
+    	//Merge the two states together
+    	for (int i = 0; i < alphabet.length; i++) {
+    		if (agentTransitionTable.get(state2)[i] != UNKNOWN_TRANSITION) {
+    			agentTransitionTable.get(state1)[i] = agentTransitionTable.get(state2)[i];
+    		}
+    	}
+    	
+    	//Change all transitions to state2 to transitions to state1
+    	for (int i = 0; i < agentTransitionTable.size(); i++) {
+    		for (int j = 0; j < alphabet.length; i++) {
+    			if (agentTransitionTable.get(i)[j] == state2) {
+    				agentTransitionTable.get(i)[j] = state1;
+    			}
+    		}
+    	}
     }
        
     /**
