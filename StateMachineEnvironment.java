@@ -28,7 +28,7 @@ public class StateMachineEnvironment {
 	public static int ALPHABET_SIZE = 6;  //for now, this can't exceed 26
 	public static int NUM_TRANSITIONS = ALPHABET_SIZE/2;
 
-    //These are used as indexes into the the sensor array
+	 //These are used as indexes into the the sensor array
 	private static final int IS_NEW_STATE = 0;
 	private static final int IS_GOAL = 1;
 
@@ -98,7 +98,7 @@ public class StateMachineEnvironment {
 		Random random = new Random();
 		int charToTransition;
 
-        // //DEBUG
+        	// //DEBUG
 		// System.out.println(transition[0][0]);
 		
 		//Initialize all the values to -1 so we can tell if there's a transition
@@ -292,7 +292,7 @@ public class StateMachineEnvironment {
 				}
 			}
 
-            //detect if any state does not have a path to the goal
+        		 //detect if any state does not have a path to the goal
 			boolean noPath = false;
 			for(int i = 0; i < paths.length; i++){
 				if(paths[i] == null){
@@ -300,8 +300,8 @@ public class StateMachineEnvironment {
 				}
 			}
 
-            //If there is a state with no path to the goal, we have a bum state
-            //machine. Regenerate and try again
+            		//If there is a state with no path to the goal, we have a bum state
+            		//machine. Regenerate and try again
 			if(queue.size() == 0 && noPath){
 				generateStateMachine();
 				findShortestPaths();  //recurse
@@ -309,7 +309,7 @@ public class StateMachineEnvironment {
 			}
 		}
 
-        // //DEBUG
+        	//DEBUG
 		// if (debug) {
 		// 	printPaths();
 		// }
