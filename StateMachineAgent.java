@@ -688,11 +688,49 @@ public class StateMachineAgent {
                  - otherwise you must have been trying to get to a
                    state as per 7d above.  I'm not sure what to do
                    here as this indicates that a previous equivalency
-                   is actually false.  Ignore for now.     
+                   is actually false.  Ignore for now.
      */
     private void cleanupFailedPlan() {
-        //TBD
+    	if(currentPlan.get(currentPlan.size() - 2).sensorValue == GOAL) {
+    		nonEquivalentStates.add(currentHypothesis);
+    		currentHypothesis = null;
+    		int[] newRow = new int[alphabet.length];
+    		for (int i = 0; i < newRow.length; i++) {
+    			newRow[i] = UNKNOWN_TRANSITION;
+    		}
+    		Episode lastEpisode = episodicMemory.get(episodicMemory.size() - 1);
+    		char action = lastEpisode.command;
+    		int lastState = lastEpisode.stateID;
+    		int actionIndex = findAlphabetIndex(action);
+    		agentTransitionTable.get(lastState)[actionIndex] = nextStateNumber;
+    		episodicMemory.add(new Episode(UNKNOWN_COMMAND, UNKNOWN_TRANSITION, nextStateNumber));
+    		nextStateNumber++;    		
+    	}
+    	else { 
+    		//ignore for now? reset?
+    	}
+       
     }
+    
+    /**
+	 * A helper method which determines a given letter's
+	 * location in the alphabet
+	 * 
+	 * @param letter
+	 * 		The letter who's index we wish to find
+	 * @return
+	 * 		The index of the given letter (or -1 if the letter was not found)
+	 */
+	private int findAlphabetIndex(char letter) {
+		// Iterate the through the alphabet to find the index of letter
+		for(int i = 0; i < alphabet.length; i++){
+			if(alphabet[i] == letter)
+				return i;
+		}
+		
+		// Error if letter is not found
+		return -1;
+	}
 
 
     /**
@@ -803,8 +841,18 @@ public class StateMachineAgent {
             //current state
             if (!isCompatibleRow(row, equivRow)) return;
 
-            //%%%TBD: verify that we haven't already discovered that these
+            //verify that we haven't already discovered that these
             //states aren't equal
+            for (int i = 0; i < nonEquivalentStates.size(); i++) {
+            	if (nonEquivalentStates.get(i)[0] == equivEpisode.stateID 
+            			&& nonEquivalentStates.get(i)[1] == this.currentState) {
+            		return;
+            	}
+            	if (nonEquivalentStates.get(i)[1] == equivEpisode.stateID 
+            			&& nonEquivalentStates.get(i)[0] == this.currentState) {
+            		return;
+            	}
+            }
 
             //hypothesize that equiv state equals the current state
             currentHypothesis = new int[2];
