@@ -448,6 +448,24 @@ public class StateMachineAgent {
 
 		return encodedSensorResult;
 	}
+	
+	/**
+	 * hasTransition
+	 * 
+	 * A helper method to determine if one state has a transition to another
+	 * @param fromState The state to transition from
+	 * @param toState The state to tranisition to
+	 * @return The index into the alphabet array for the transition character, or
+	 * 			-1 if no such character exists
+	 */
+	private int hasTransition(int fromState, int toState) {
+		for (int i = 0; i < agentTransitionTable.get(fromState).length; i++) {
+			if (agentTransitionTable.get(fromState)[i] == toState) {
+				return i;
+			}
+		}
+		return -1;
+	}
 
     /**
      * makePlanToState
@@ -459,17 +477,70 @@ public class StateMachineAgent {
      * @param targetID  id of the state we want to reach
      */
     private void makePlanToState(int startID, int targetID) {
-        //%%%TBD
+        String[] paths = new String[agentTransitionTable.size()];
+    	
+		//Create a queue and add the Goal State to the queue
+		ArrayList<Integer> queue = new ArrayList<Integer>();
+		queue.add(targetID);
+		int currState;
+		int transitionChar;
+		
+		
+		while (!queue.isEmpty()) {
+			//Grab the element at the front of the queue
+			currState = queue.get(0);
+			queue.remove(0);
+			
+			//Move through each state that doesn't have a path yet. Find the
+			//transition from that state to the current state.
+			for (int i = 0; i < agentTransitionTable.size(); i++) {
+
+                //skip the ones that have a path
+                if (paths[i] != null) continue;
+                
+				transitionChar = hasTransition(i, currState);
+				
+				//If state i has a transition to the current state and has no
+				//path, set the path for state i equal to the transition
+				//character from state i to the current state added to the front
+				//of the shortest path to the current state, and add state i
+				//onto the queue.
+				if (transitionChar != -1) {
+					paths[i] = alphabet[transitionChar] + paths[currState];
+					queue.add(i);
+				}
+			}
+			
+			//Make sure there is a path from startID, and if there is, parse the plan
+			if (paths[startID] != null) {
+				ArrayList<Episode> plan = new ArrayList<Episode>();
+				String pathToParse = paths[startID];
+				int[] transitionRow = agentTransitionTable.get(startID);
+				int sensorValue;
+				for (int i = 0; i < pathToParse.length(); i++) {
+					if (targetID == 0 && i == pathToParse.length() - 1) {
+						sensorValue = GOAL;
+					}
+					else {
+						sensorValue = TRANSITION_ONLY;
+					}
+					plan.add(new Episode(pathToParse.charAt(i), sensorValue, transitionRow[i]));
+					transitionRow = agentTransitionTable.get(transitionRow[i]);
+				}
+				
+				currentPlan = plan;
+				hasPlan = true;
+			}
+		}
     	
     }
-     
     
 
     /**
      * getFirstUnkown
      *
      * Given an index into the transition table, this method discovers the first
-     * unknwon transition in that row in the table and
+     * unknown transition in that row in the table and
      *
      * @param rowIndex  index of the row in the transition table
      *
@@ -748,35 +819,6 @@ public class StateMachineAgent {
                 
         
     }//makeMove
-     
-    
-	/**
-	 * Makes the Agent take a random move, record it in episodic memory, and update its transition
-	 * table
-	 * @return The sensor encoding from the action the Agent has taken
-	 */
-	private int makeRandomMove() { 
-		char action = generateRandomAction();
-		boolean[] sensors = env.tick(action);
-		int sensorEncoding = encodeSensors(sensors);
-		int characterIndex = indexOfCharacter(action);
-		if(sensorEncoding != IS_GOAL) {
-			agentTransitionTable.get(currentState)[characterIndex] = nextStateNumber;
-			currentStateID = nextStateNumber;
-			nextStateNumber++;
-			int[] row = new int[alphabet.length];
-			for (int i = 0; i < row.length; i++) {
-				row[i] = UNKNOWN_TRANSITION;
-			}
-			agentTransitionTable.add(row);
-		}
-		else {
-			agentTransitionTable.get(currentState)[characterIndex] = GOAL_STATE;
-			currentStateID = GOAL_STATE;
-		}
-		episodicMemory.add(new Episode(action, sensorEncoding, currentStateID));
-		return sensorEncoding;
-	}
 	
 	public void addNewState()  { 
 		
