@@ -532,6 +532,10 @@ public class StateMachineAgent {
 	 */
 	private void makePlanToState(int startID, int targetID) {
 		String[] paths = new String[agentTransitionTable.size()];
+		
+		for (int i = 0; i < paths.length; i++) {
+			paths[i] = "";
+		}
 
 		//Create a queue and add the Goal State to the queue
 		ArrayList<Integer> queue = new ArrayList<Integer>();
@@ -544,7 +548,7 @@ public class StateMachineAgent {
 			//Grab the element at the front of the queue
 			currState = queue.get(0);
 			queue.remove(0);
-
+			
 			//Move through each state that doesn't have a path yet. Find the
 			//transition from that state to the current state.
 			for (int i = 0; i < agentTransitionTable.size(); i++) {
@@ -578,8 +582,15 @@ public class StateMachineAgent {
 					else {
 						sensorValue = TRANSITION_ONLY;
 					}
-					plan.add(new Episode(pathToParse.charAt(i), sensorValue, transitionRow[i]));
-					transitionRow = agentTransitionTable.get(transitionRow[i]);
+					int charIndex = findAlphabetIndex(pathToParse.charAt(i));
+					if(charIndex == -1){
+						System.out.println("character: " + pathToParse.charAt(i));
+					}
+					System.out.println(charIndex + "");
+					plan.add(new Episode(pathToParse.charAt(i), sensorValue, transitionRow[charIndex]));
+					if(transitionRow[charIndex] != -1) {
+						transitionRow = agentTransitionTable.get(transitionRow[charIndex]);
+					}
 				}
 
 				currentPlan = plan;
@@ -838,7 +849,7 @@ public class StateMachineAgent {
 		currEp.command = cmd;
 
 		//if we're in the middle of a plan it needs to be updated
-		if (this.currentPlan != null) {
+		if (this.currentPlan != null && this.currentPlan.size() != 0) {
 
 			//Advance the plan and verify that the sensors match
 			this.planIndex++;
