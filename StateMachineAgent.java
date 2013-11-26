@@ -373,7 +373,9 @@ public class StateMachineAgent {
 		while (!mappingComplete()) {
 			currCommand = selectNextCommand();
 			makeMove(currCommand);
+			printStateMachine();
 		}
+		printStateMachine();
 	}
 
 	/**
@@ -413,6 +415,9 @@ public class StateMachineAgent {
 	 */
 	private int maxMatchedStringIndex() {
 		int lastGoalIndex = findLastGoal(episodicMemory.size());
+		if (lastGoalIndex == -1) {
+			return -1;
+		}
 		int maxStringIndex = -1;
 		int maxStringLength = 0;
 		int currStringLength;
@@ -427,8 +432,12 @@ public class StateMachineAgent {
 				}
 			}
 		}
-
-		return maxStringIndex;
+		if (maxStringIndex < 0) {
+			return 0;
+		}
+		else {
+			return maxStringIndex;
+		}
 	}
 
 	/**
@@ -616,6 +625,7 @@ public class StateMachineAgent {
 	 *
 	 */
 	private char selectNextCommand() {
+		//System.out.println("DEATH TO THE OPPOSITION");
 		char cmd = ' '; //the command to return
 
 		//If I've never found a path to the goal I can only act randomly until I
@@ -814,6 +824,7 @@ public class StateMachineAgent {
 	 * @param cmd the command to issue
 	 */
 	private void makeMove(char cmd) {
+		//System.out.println("FIND HIM AND KILL HIM");
 		boolean[] sensors = env.tick(cmd);
 		int mergedSensors = encodeSensors(sensors);
 		int commandIndex = findAlphabetIndex(cmd);
@@ -857,6 +868,10 @@ public class StateMachineAgent {
 		else {
 			//Examine the transition to extract what state I believe I'm in
 			Episode prev = episodicMemory.get(episodicMemory.size() - 1);
+			if (prev.stateID < 0) {
+				System.out.println("I'm returning   " + prev.stateID);
+				return;
+			}
 			int[] row = agentTransitionTable.get(prev.stateID);
 			this.currentState = row[commandIndex];
 
@@ -885,6 +900,9 @@ public class StateMachineAgent {
 			int equivIndex = maxMatchedStringIndex();
 			if (equivIndex != -1) {
 				Episode equivEpisode = episodicMemory.get(equivIndex);
+				if (equivEpisode.stateID < 0) {
+					return;
+				}
 				int[] equivRow = agentTransitionTable.get(equivEpisode.stateID);
 
 				//verify this equiv state has a compatible transition table entry to
@@ -946,4 +964,32 @@ public class StateMachineAgent {
 		ofSPECTRE.episodicMemory = new ArrayList<Episode>();
 
 	}
+	
+	 /**
+     * A method which iterates through and prints out
+     * the two-dimension array that represents the state machine
+     */
+    public void printStateMachine() {
+        System.out.print("     ");
+        for(int i = 0; i < alphabet.length; ++i) {
+            System.out.printf("%3c", alphabet[i]);
+        }
+        System.out.println();
+
+        for (int i = 0; i < agentTransitionTable.size(); i++) {
+            System.out.printf("%3d: ", i);
+
+            for (int j = 0; j < alphabet.length; j++) {
+                System.out.printf("%3d", agentTransitionTable.get(i)[j]);
+            }
+            System.out.println();
+        }
+
+        System.out.print("     ");
+        for(int i = 0; i < alphabet.length; ++i) {
+            System.out.printf("%3c", alphabet[i]);
+        }
+        System.out.println();
+    }
+	
 }
