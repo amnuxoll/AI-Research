@@ -824,13 +824,17 @@ public class StateMachineAgent {
 	 * @param cmd the command to issue
 	 */
 	private void makeMove(char cmd) {
+		//Complete the current episode with the given command
+		Episode currEp = this.episodicMemory.get(this.episodicMemory.size() - 1);
+		currEp.command = cmd;
+		
 		//System.out.println("FIND HIM AND KILL HIM");
 		boolean[] sensors = env.tick(cmd);
 		int mergedSensors = encodeSensors(sensors);
 		int commandIndex = findAlphabetIndex(cmd);
 
 		//Complete the current episode with the given command
-		Episode currEp = this.episodicMemory.get(this.episodicMemory.size() - 1);
+		currEp = this.episodicMemory.get(this.episodicMemory.size() - 1);
 		currEp.command = cmd;
 
 		//if we're in the middle of a plan it needs to be updated
@@ -887,6 +891,14 @@ public class StateMachineAgent {
 				else {
 					currentStateID++;
 					row[commandIndex] = currentStateID;
+					currentState = currentStateID;
+					
+					//%%%TBD  add a row to the transition table to support this
+					int[] newRow = new int[alphabet.length];
+					for (int i = 0; i < newRow.length; i++) {
+						newRow[i] = UNKNOWN_TRANSITION;
+					}
+					agentTransitionTable.add(newRow);
 				}
 			}
 
