@@ -8,6 +8,7 @@ public class StateMachineAgent {
 
 	// Instance variables
 	private Path best = null;  //best path from init to goal the agent knows atm
+	private ArrayList<Character> possibleBest;
 	private StateMachineEnvironment env;
 	private char[] alphabet;
 	private ArrayList<Episode> episodicMemory;
@@ -37,7 +38,7 @@ public class StateMachineAgent {
 	private int currentState = 1;
 	// A path which the agent expects will take it to the goal
 	// In other words, a method of testing it's hypothesis about two states being the same
-	private ArrayList<Episode> currentPlan;
+	private ArrayList<Episode> currentPlan = null;
 	//next command to execute in the current plan
 	private int planIndex = 0;
 	//The numerical id to assign to the next new state we see
@@ -86,6 +87,7 @@ public class StateMachineAgent {
 		}
 		agentTransitionTable.add(zeroRow);
 		agentTransitionTable.add(firstState);
+		possibleBest = new ArrayList<Character>();
 	}
 
 	/**
@@ -595,6 +597,10 @@ public class StateMachineAgent {
 
 				currentPlan = plan;
 				hasPlan = true;
+				if (plan.size() == 0) {
+					currentPlan = null;
+					hasPlan = false;
+				}
 			}
 		}
 
@@ -646,7 +652,7 @@ public class StateMachineAgent {
 		}
 
 		//If I have an active plan, extract the next action from that plan
-		else if (currentPlan != null) {
+		else if (currentPlan != null && currentPlan.size() != 0) {
 			Episode currEp = currentPlan.get(planIndex);
 			return currEp.command;
 		}
@@ -723,6 +729,7 @@ public class StateMachineAgent {
 	 */
 	private void mergeTwoStates(int state1, int state2) {
 		//Merge the two states together
+		System.out.println("State " + state1 + " has been merged with State " + state2);
 		for (int i = 0; i < alphabet.length; i++) {
 			if (agentTransitionTable.get(state2)[i] != UNKNOWN_TRANSITION) {
 				agentTransitionTable.get(state1)[i] = agentTransitionTable.get(state2)[i];
@@ -811,6 +818,7 @@ public class StateMachineAgent {
 	 *
 	 */
 	private boolean isCompatibleRow(int[] row1, int[] row2) {
+		System.out.println("Checking if rows are compatible");
 		// Go through each entry in the rows to compare them
 		for(int i = 0; i < row1.length; i++) { 
 			// If the rows are not equivalent
@@ -835,14 +843,23 @@ public class StateMachineAgent {
 	 * @param cmd the command to issue
 	 */
 	private void makeMove(char cmd) {
+		
+		possibleBest.add(cmd);
+		
 		//Complete the current episode with the given command
 		Episode currEp = this.episodicMemory.get(this.episodicMemory.size() - 1);
 		currEp.command = cmd;
 		
-		//System.out.println("FIND HIM AND KILL HIM");
 		boolean[] sensors = env.tick(cmd);
 		int mergedSensors = encodeSensors(sensors);
 		int commandIndex = findAlphabetIndex(cmd);
+		
+		if (mergedSensors == IS_GOAL) {
+			if (best == null || possibleBest.size() < best.size()) {
+				best = new Path(possibleBest);
+			}
+			possibleBest = new ArrayList<Character>();
+		}
 
 		//Complete the current episode with the given command
 		currEp = this.episodicMemory.get(this.episodicMemory.size() - 1);
@@ -855,6 +872,8 @@ public class StateMachineAgent {
 			this.planIndex++;
 			Episode currPlanEp = this.currentPlan.get(this.planIndex);
 			if (currPlanEp.sensorValue != mergedSensors) {
+				// %%%DEBUG
+				System.out.println("Our plan failed!");
 				//Plan has failed
 				cleanupFailedPlan();
 			}
@@ -873,6 +892,8 @@ public class StateMachineAgent {
 				//if this was a plan to reach the goal then any hypothetic
 				//equivalencies need to be accepted
 				if (currPlanEp.stateID == INIT_STATE) {
+					// %%%DEBUG
+					System.out.println("We're accepting our hypothesis!");
 					acceptCurrentHypothesis();
 				}
 			}
@@ -944,7 +965,8 @@ public class StateMachineAgent {
 						return;
 					}
 				}
-
+				
+				if (equivEpisode.stateID == this.currentState) return;
 				//hypothesize that equiv state equals the current state
 				currentHypothesis = new int[2];
 				currentHypothesis[0] = equivEpisode.stateID;
@@ -955,9 +977,6 @@ public class StateMachineAgent {
 			}
 
 		}//else
-
-
-
 	}//makeMove
 
 	public void addNewState()  { 
