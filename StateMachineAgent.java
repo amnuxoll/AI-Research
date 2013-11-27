@@ -70,7 +70,8 @@ public class StateMachineAgent {
 	 * The constructor for the agent simply initializes it's instance variables
 	 */
 	public StateMachineAgent() {
-		env = new StateMachineEnvironment();
+		int[][] testTransitions = new int[][] {{2, 1, 0},{1, 0, 2},{2, 2, 2}};
+		env = new StateMachineEnvironment(testTransitions, 3, 3);
 		alphabet = env.getAlphabet();
 		episodicMemory = new ArrayList<Episode>();
 		//Need a first episode for makeMove
@@ -989,11 +990,6 @@ public class StateMachineAgent {
 	 */
 	public static void main(String [ ] args)
 	{
-		StateMachineEnvironment.NUM_STATES = 3;
-		StateMachineEnvironment.GOAL_STATE = StateMachineEnvironment.NUM_STATES - 1;
-		StateMachineEnvironment.ALPHABET_SIZE = 3;
-		StateMachineEnvironment.NUM_TRANSITIONS = 3;
-
 		StateMachineAgent ofSPECTRE;
 		ofSPECTRE = new StateMachineAgent();
 		System.out.println("ENVIRONMENT INFO:");

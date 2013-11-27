@@ -57,6 +57,32 @@ public class StateMachineEnvironment {
 			System.out.println("Shortest Path: " + paths[0]);
 		}
 	}
+	
+	/**
+	 * A constructor which allows us to hard code state machine transitions
+	 * for testing purposes 
+	 */
+	public StateMachineEnvironment(int[][] transitions, int alphaSize, int numTransitions) {
+		NUM_STATES = transitions.length;
+		GOAL_STATE = NUM_STATES - 1;
+		ALPHABET_SIZE = alphaSize;
+		NUM_TRANSITIONS = numTransitions;
+		
+		paths = new String[NUM_STATES];
+		paths[GOAL_STATE] = "";
+		fillAlphabet();
+		currentState = 0;
+		transition = transitions;
+		
+		if(debug) {
+			printStateMachine();
+		}
+		
+		findShortestPaths();
+		if(debug) {
+			System.out.println("Shortest Path: " + paths[0]);
+		}
+	}
 
     /**
      * fills the alphabet array with ALPHABET_SIZE characters
