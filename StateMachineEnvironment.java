@@ -1,4 +1,4 @@
-package passphraseReplacement;
+ 
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -33,15 +33,17 @@ public class StateMachineEnvironment {
 	private static final int IS_GOAL = 1;
 
     
-	private int[][] transition;
+	private int[][] transition; //transition table
 	private char[] alphabet;
-	private String[] paths;
+	private String[] paths;  //shortest path from each state to goal
 	public int currentState;
 	
 	//DEBUG
 	private boolean debug = false;
 
-	
+	/**
+	 * Default constructor
+	 */
 	public StateMachineEnvironment() {
 		paths = new String[NUM_STATES];
 		paths[GOAL_STATE] = "";
@@ -58,28 +60,22 @@ public class StateMachineEnvironment {
 		}
 	}
 	
-	/**
-	 * A constructor which allows us to hard code state machine transitions
-	 * for testing purposes 
-	 */
-	public StateMachineEnvironment(int[][] transitions, int alphaSize, int numTransitions) {
-		NUM_STATES = transitions.length;
+	public StateMachineEnvironment(int numStates, int alphSize){
+		NUM_STATES = numStates;
 		GOAL_STATE = NUM_STATES - 1;
-		ALPHABET_SIZE = alphaSize;
-		NUM_TRANSITIONS = numTransitions;
-		
+		ALPHABET_SIZE = alphSize;
+		NUM_TRANSITIONS = ALPHABET_SIZE/2;
 		paths = new String[NUM_STATES];
 		paths[GOAL_STATE] = "";
 		fillAlphabet();
 		currentState = 0;
-		transition = transitions;
-		
-		if(debug) {
+		generateStateMachine();
+		if(debug){
 			printStateMachine();
 		}
 		
 		findShortestPaths();
-		if(debug) {
+		if (debug) {
 			System.out.println("Shortest Path: " + paths[0]);
 		}
 	}
