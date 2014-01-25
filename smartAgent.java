@@ -1,21 +1,23 @@
- 
 
 import java.util.*;
 
-public class RandomAgent extends Agent{	
+public class smartAgent extends Agent{
 	
-	/**
-	 * RandomAgent Constructor.
-	 */
-	public RandomAgent(){
+	//Variables
+	protected Hashtable<int,int> equivStates = new Hashtable<int,int>();
+	protected Hashtable<int,int> diffStates = new Hashtable<int,int>();
+	protected ArrayList<int>[] transitionTable;								// we can know the length of alphabet but don't know how many states there are going to be
+	
+	
+	
+	public smartAgent(){
 		super();
+		transitionTable = new ArrayList<int>[alphabet.length];
 	}
 	
-	/**
-	 * RandomAgent Ctor
-	 */
-	public RandomAgent(StateMachineEnvironment environment){
+	public smartAgent(StateMachineEnvironment environment){
 		super(environment);
+		transitionTable = new ArrayList<int>[alphabet.length];
 	}
 	
 	/**
@@ -30,16 +32,15 @@ public class RandomAgent extends Agent{
 		do{
 			letter = randomChar(length);
 			sensor = this.env.tick(letter);	//updates sensor
-			//encode sensors to make into an episode to store in memory
+			//encode sensors to make into an episode to store in memory\
 			int encodedSensorValue = encodeSensors(sensor);
 			episodicMemory.add(new Episode(letter, encodedSensorValue, count));
-			
 			
 		}while(!sensor[IS_GOAL]);
 	}
 	
 	/**
-	 * 
+	 *  
 	 */
 	private int encodeSensors(boolean[] sensors){
 		
@@ -74,23 +75,30 @@ public class RandomAgent extends Agent{
 	}
 	
 	/**
-	 * main
-	 * @param args
+	 *
 	 */
-	public static void main(String [] args){
-		
-		RandomAgent test = new RandomAgent();
-		test.findRandomPath();
-		test.env.printStateMachine();
-		test.printPath();
-		
-		StateMachineEnvironment testEnv = new StateMachineEnvironment(5,2);
-		RandomAgent test2 = new RandomAgent(testEnv);
-		test2.findRandomPath();
-		test2.env.printStateMachine();
-		test2.printPath();
+	public void findBestPath(){
+		this.findRandomPath();
 		
 		
 	}
 	
+	
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
