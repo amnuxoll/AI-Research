@@ -4,81 +4,78 @@ import java.util.*;
 public class smartAgent extends Agent{
 	
 	//Variables
-	protected Hashtable<int,int> equivStates = new Hashtable<int,int>();
-	protected Hashtable<int,int> diffStates = new Hashtable<int,int>();
-	protected ArrayList<int>[] transitionTable;								// we can know the length of alphabet but don't know how many states there are going to be
+	// An ArrayList of arrays that are length 2 to allow us to store which states we think are equal
+	protected ArrayList<int[]> equivStates = new ArrayList<int[2]>;
+	
+	// An ArrayList of arrays that are length 2 to allow us to store which states we think are not equal
+	protected ArrayList<int[]> diffStates = new ArrayList<int[2]>;
+	
+	// Holds the Agents current transition table (what it thinks the transition table is)
+	protected ArrayList<int[]> transitionTable;				// we can know the length of alphabet but don't know how many states there are going to be
+	
+	// Which state the agent thinks it is in currently
+	protected int currentState;
+	
+	// A list of episodes that the agent thinks it can take to get to the goal state.
+	protected ArrayList<Episode> currentPlan = null;
+	
+	// Which two states the Agent is conjecturing are equal.
+	private int[] currentHypothesis = new int[2];
+	
+	// Does the current state we are in have a path that we have not tried yet? 
+	protected boolean hasBestPath = false;
+	
+	
+	
 	
 	
 	
 	public smartAgent(){
 		super();
-		transitionTable = new ArrayList<int>[alphabet.length];
+		transitionTable = new ArrayList<int[alphabet.length]>;
+		currentState = 0;
 	}
 	
 	public smartAgent(StateMachineEnvironment environment){
 		super(environment);
-		transitionTable = new ArrayList<int>[alphabet.length];
-	}
-	
-	/**
-	 * this method finds the random path to the goal
-	 */
-	public void findRandomPath(){
-		
-		int length = this.alphabet.length;  // # char in alpha
-		char letter;
-		int count = 2;  //starting at 2 because this is the next state in the memory for the episodes 
-		
-		do{
-			letter = randomChar(length);
-			sensor = this.env.tick(letter);	//updates sensor
-			//encode sensors to make into an episode to store in memory\
-			int encodedSensorValue = encodeSensors(sensor);
-			episodicMemory.add(new Episode(letter, encodedSensorValue, count));
-			
-		}while(!sensor[IS_GOAL]);
-	}
-	
-	/**
-	 *  
-	 */
-	private int encodeSensors(boolean[] sensors){
-		
-		int encodedResult;
-		if(sensors[IS_GOAL]) encodedResult = MYSTERY_AND_GOAL_ON;
-		else if(sensors[IS_NEW_STATE]) encodedResult = MYSTERY_SENSOR_ON;
-		else encodedResult = NO_SENSORS_ON;
-		
-		return encodedResult;
+		transitionTable = new ArrayList<int[alphabet.length]>;
+		currentState = 0;
 	}
 	
 	
-	/**
-	 * returns a random char that is in the alphabet that the agent is using
-	 */
-	private char randomChar(int length){
-		
-		int randomLetter = (int)(Math.random()*length);
-		char letter = this.alphabet[randomLetter];
-		return letter; 
-	}
 	
-	/**
-	 * printPath
-	 */
-	public void printPath(){
-		for(int i = 0; i<this.episodicMemory.size();i++){
-			System.out.print(this.episodicMemory.get(i).command);
-		}
-		System.out.println();
-		System.out.println(this.episodicMemory.size()-1);
-	}
 	
-	/**
-	 *
+	/*
+	 * findBestPath()
+	 * This method finds the best path for the agent from the start to finish
+	 * and fills out the entire state table for the graph to the best of it's ability
 	 */
-	public void findBestPath(){
+	public void run(){
+		// step1
 		this.findRandomPath();
+		
+		// step2
+		this.findNextOpenState();			// open meaning has unfilled transition table entries.
+		
+		// step 3
+		this.makeMove();					// makes the move from the found open state
+		
+		while(/* transition table not fulllllllllllll */){
+			
+			// step 4
+			this.analyzeMove(/*Step 5*/);		// Checks to see if the state we land in is one we recognize
+			
+			// step 6
+			this.moveRandom( /*boolean analysis */); // analysis will be returned from analyzeMove()
+			
+			// step 7
+			this.testConjecture();
+		}		
+		// step 8 b loop
+		// step 9 beq 
+		
+		// use equiv states to replace transition table values.
+		this.optimizeTransTable();
 		
 		
 	}
