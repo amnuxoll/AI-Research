@@ -1,4 +1,4 @@
- 
+package randomPackage;
 
 import java.util.ArrayList;
 import java.util.Random;

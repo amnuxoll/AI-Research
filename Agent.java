@@ -1,4 +1,4 @@
- 
+package randomPackage;
 
 import java.util.ArrayList;
 
@@ -9,6 +9,8 @@ public abstract class Agent {
 		protected char[] alphabet;
 		protected ArrayList<Episode> episodicMemory;
 		protected boolean[] sensor;
+		
+		protected int numStates = 1;
 		
 		protected static final int IS_NEW_STATE = 0;
 		protected static final int IS_GOAL = 1;
@@ -70,15 +72,15 @@ public abstract class Agent {
 		
 		int length = this.alphabet.length;  // # char in alpha
 		char letter;
-		int count = 2;  //starting at 2 because this is the next state in the memory for the episodes 
+		numStates++;  //starting at 2 because this is the next state in the memory for the episodes 
 		
 		do{
 			letter = randomChar(length);
 			sensor = this.env.tick(letter);	//updates sensor
 			//encode sensors to make into an episode to store in memory
 			int encodedSensorValue = encodeSensors(sensor);
-			episodicMemory.add(new Episode(letter, encodedSensorValue, count));
-			
+			episodicMemory.add(new Episode(letter, encodedSensorValue, numStates));
+			numStates++;
 			
 		}while(!sensor[IS_GOAL]);
 	}
@@ -86,7 +88,7 @@ public abstract class Agent {
 	/**
 	 * 
 	 */
-	private int encodeSensors(boolean[] sensors){
+	protected int encodeSensors(boolean[] sensors){
 		
 		int encodedResult;
 		if(sensors[IS_GOAL]) encodedResult = MYSTERY_AND_GOAL_ON;
@@ -100,7 +102,7 @@ public abstract class Agent {
 	/**
 	 * returns a random char that is in the alphabet that the agent is using
 	 */
-	private char randomChar(int length){
+	protected char randomChar(int length){
 		
 		int randomLetter = (int)(Math.random()*length);
 		char letter = this.alphabet[randomLetter];
