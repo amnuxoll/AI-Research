@@ -85,7 +85,7 @@ public class StateMachineAgent {
 		int[] firstState = new int[alphabet.length];
 		//%%%TODO: Make the first element in a transition row the number of that state
 		for (int i = 0; i < zeroRow.length; i++) {
-			zeroRow[i] = UNKNOWN_TRANSITION;
+			zeroRow[i] = /*UNKNOWN_TRANSITION*/0;
 			firstState[i] = UNKNOWN_TRANSITION;
 		}
 		agentTransitionTable.add(zeroRow);
@@ -672,14 +672,18 @@ public class StateMachineAgent {
 		//If there is no plan, then select an action that I've never done before
 		//from the state that I believe I'm in (explore)
 		else {
-			cmd = getUnknown(currentState);
-			if (cmd != UNKNOWN_COMMAND) return cmd;
+			for (int i = 0; i < alphabet.length; i++) {
+				if (agentTransitionTable.get(currentState)[i] == UNKNOWN_TRANSITION) {
+					cmd = getUnknown(currentState);
+					if (cmd != UNKNOWN_COMMAND) return cmd;
+				}
+			}
 		}
 
 		//if we reach this point there is no unknown transition from the current
 		//state.  Find the lowest numbered state that has an unknown transition
 		//and make a plan to get there
-		int state = -1;
+		int state = 0;
 		while (cmd == UNKNOWN_COMMAND) {
 			state++;
 			cmd = getFirstUnknown(state);
@@ -894,7 +898,7 @@ public class StateMachineAgent {
 			//correct
 			Episode now = new Episode(UNKNOWN_COMMAND, mergedSensors, currPlanEp.stateID);
 			episodicMemory.add(now);
-			this.currentState = currPlanEp.stateID;
+			//this.currentState = currPlanEp.stateID;
 
 
 			//If we've reached the goal episode for the plan the remove it
@@ -949,7 +953,7 @@ public class StateMachineAgent {
 			//Add an episode to reflect what just happened
 			Episode now = new Episode(UNKNOWN_COMMAND, mergedSensors, this.currentState);
 			episodicMemory.add(now);
-			this.currentState = currentStateID;
+			//this.currentState = currentStateID;
 
 			//Find data about previous state that may be the same as the current
 			//state
