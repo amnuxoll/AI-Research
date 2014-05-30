@@ -1,4 +1,4 @@
-package passphraseReplacement;
+package stateMachineAgent;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -70,8 +70,10 @@ public class StateMachineAgent {
 	 * The constructor for the agent simply initializes it's instance variables
 	 */
 	public StateMachineAgent() {
-		int[][] testTransitions = new int[][] {{2, 1, 0},{1, 0, 2},{2, 2, 2}};
-		env = new StateMachineEnvironment(testTransitions, 3, 3);
+		//int[][] testTransitions = new int[][] {{2, 1, 0},{1, 0, 2},{2, 2, 2}};
+		int[][] testTransitions = new int[][]{{0,1},{1,1}};
+		//env = new StateMachineEnvironment(testTransitions, 3, 3);
+		env = new StateMachineEnvironment(testTransitions, 2, 2);
 		alphabet = env.getAlphabet();
 		episodicMemory = new ArrayList<Episode>();
 		//Need a first episode for makeMove
@@ -629,6 +631,15 @@ public class StateMachineAgent {
 
 		return UNKNOWN_COMMAND;  // no unknown transition
 	}//getFirstUnknown
+	
+	private char getUnknown(int rowIndex) {
+		char c = generateRandomAction();
+		int[] row = agentTransitionTable.get(rowIndex);
+		if (row[indexOfCharacter(c)] == UNKNOWN_TRANSITION) {
+			return c;
+		}
+		return getUnknown(rowIndex);
+	}
 
 
 	/**
@@ -661,7 +672,7 @@ public class StateMachineAgent {
 		//If there is no plan, then select an action that I've never done before
 		//from the state that I believe I'm in (explore)
 		else {
-			cmd = getFirstUnknown(currentState);
+			cmd = getUnknown(currentState);
 			if (cmd != UNKNOWN_COMMAND) return cmd;
 		}
 
@@ -855,7 +866,7 @@ public class StateMachineAgent {
 		int mergedSensors = encodeSensors(sensors);
 		int commandIndex = findAlphabetIndex(cmd);
 		
-		if (mergedSensors == IS_GOAL) {
+		if (mergedSensors == GOAL) {
 			if (best == null || possibleBest.size() < best.size()) {
 				best = new Path(possibleBest);
 			}
