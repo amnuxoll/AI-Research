@@ -419,6 +419,7 @@ public class StateMachineAgent {
 	 *         the agent has taken
 	 */
 	private int maxMatchedStringIndex() {
+		//%%%ISSUE: Always -1
 		int lastGoalIndex = findLastGoal(episodicMemory.size());
 		if (lastGoalIndex == -1) {
 			return -1;
@@ -877,10 +878,6 @@ public class StateMachineAgent {
 			possibleBest = new ArrayList<Character>();
 		}
 
-		//Complete the current episode with the given command
-		currEp = this.episodicMemory.get(this.episodicMemory.size() - 1);
-		currEp.command = cmd;
-
 		//if we're in the middle of a plan it needs to be updated
 		if (this.currentPlan != null && this.currentPlan.size() != 0) {
 
@@ -892,6 +889,11 @@ public class StateMachineAgent {
 				System.out.println("Our plan failed!");
 				//Plan has failed
 				cleanupFailedPlan();
+			}
+			
+			//Magical reset if the agent has hit the goal
+			if (mergedSensors == GOAL) {
+				this.currentState = INIT_STATE;
 			}
 
 			//Add an episode that reflects our belief that this hypothesis is
@@ -935,8 +937,8 @@ public class StateMachineAgent {
 					this.currentState = INIT_STATE;
 					row[commandIndex] = GOAL_STATE;
 				}
-				//Otherwise create a new state for this new circumstance
-				else {
+				//Create a new state for this new circumstance if we are not at the goal
+				if (mergedSensors != GOAL) {
 					currentStateID++;
 					row[commandIndex] = currentStateID;
 					currentState = currentStateID;
@@ -948,6 +950,12 @@ public class StateMachineAgent {
 					}
 					agentTransitionTable.add(newRow);
 				}
+			}
+			
+			//Magical reset if the goal has been reached
+			if (mergedSensors == GOAL) {
+				this.currentState = INIT_STATE;
+				row[commandIndex] = GOAL_STATE;
 			}
 
 			//Add an episode to reflect what just happened
@@ -993,6 +1001,12 @@ public class StateMachineAgent {
 			}
 
 		}//else
+		
+		//MAKE SURE the agent has reset to state 1 if it's at the goal
+		if (mergedSensors == GOAL) {
+			currentState = INIT_STATE;
+		}
+		
 	}//makeMove
 
 	public void addNewState()  { 
