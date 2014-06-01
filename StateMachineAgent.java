@@ -40,7 +40,7 @@ public class StateMachineAgent {
 	// In other words, a method of testing it's hypothesis about two states being the same
 	private ArrayList<Episode> currentPlan = null;
 	//next command to execute in the current plan
-	private int planIndex = 0;
+	private int planIndex = -1;
 	//The numerical id to assign to the next new state we see
 	private int nextStateNumber = 2;
 	// A variable to indicate whether or not the agent has a current plan to try
@@ -419,7 +419,6 @@ public class StateMachineAgent {
 	 *         the agent has taken
 	 */
 	private int maxMatchedStringIndex() {
-		//%%%ISSUE: Always -1
 		int lastGoalIndex = findLastGoal(episodicMemory.size());
 		if (lastGoalIndex == -1) {
 			return -1;
@@ -479,7 +478,7 @@ public class StateMachineAgent {
 	 */
 	private int findLastGoal(int toStart) {
 		for (int i = toStart - 1; i > 0; i --) {
-			if (episodicMemory.get(i).sensorValue == IS_GOAL) {
+			if (episodicMemory.get(i).sensorValue == GOAL) {
 				return i;
 			}
 		}
@@ -560,7 +559,7 @@ public class StateMachineAgent {
 			for (int i = 0; i < agentTransitionTable.size(); i++) {
 
 				//skip the ones that have a path
-				if (paths[i] != null) continue;
+				if (!paths[i].equals("")) continue;
 
 				transitionChar = hasTransition(i, currState);
 
@@ -784,7 +783,7 @@ public class StateMachineAgent {
                    is actually false.  Ignore for now.
 	 */
 	private void cleanupFailedPlan() {
-		if(currentPlan.get(currentPlan.size() - 2).sensorValue == GOAL) {
+		if(currentPlan.size() >= 2 && currentPlan.get(currentPlan.size() - 2).sensorValue == GOAL) {
 			nonEquivalentStates.add(currentHypothesis);
 			currentHypothesis = null;
 			int[] newRow = new int[alphabet.length];
@@ -802,6 +801,9 @@ public class StateMachineAgent {
 		else { 
 			//ignore for now? reset?
 		}
+		//Remove the current plan and reset the plan index
+		currentPlan = null;
+		planIndex = -1;
 
 	}
 
@@ -905,7 +907,7 @@ public class StateMachineAgent {
 
 			//If we've reached the goal episode for the plan the remove it
 			//And verify all hypotheses
-			if (this.planIndex == this.currentPlan.size() - 1) {
+			if (currentPlan != null && this.planIndex >= this.currentPlan.size() - 1) {
 				this.currentPlan = null;
 				//if this was a plan to reach the goal then any hypothetic
 				//equivalencies need to be accepted
