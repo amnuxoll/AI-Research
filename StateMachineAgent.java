@@ -156,7 +156,7 @@ public class StateMachineAgent {
 		for (int i = 0; i < best.size(); i++) {
 			sensors = env.tick(best.get(i));
 			int encodedSensorResult = encodeSensors(sensors);
-			episodicMemory.add(new Episode(best.get(i), encodedSensorResult, 0));
+			episodicMemory.add(new Episode(best.get(i), encodedSensorResult, INIT_STATE));
 
 			if (sensors[IS_GOAL]) {
 				//DEBUG
@@ -249,7 +249,7 @@ public class StateMachineAgent {
 			toCheck = generateRandomAction();
 			sensors = env.tick(toCheck);
 			encodedSensorResult = encodeSensors(sensors);
-			episodicMemory.add(new Episode(toCheck, encodedSensorResult, 0));
+			episodicMemory.add(new Episode(toCheck, encodedSensorResult, INIT_STATE));
 			/*if (episodicMemory.size() > 500000000) {
 				System.exit(0);
 			}*/
@@ -348,7 +348,7 @@ public class StateMachineAgent {
 			sensors = env.tick(transitionCharacter);
 			sensorEncoding = encodeSensors(sensors);
 			action = "" + transitionCharacter + sensorEncoding;
-			episodicMemory.add(new Episode(transitionCharacter, sensorEncoding, 0));
+			episodicMemory.add(new Episode(transitionCharacter, sensorEncoding, INIT_STATE));
 			if (sensorEncoding == GOAL) {
 				return true;
 			}
@@ -585,6 +585,7 @@ public class StateMachineAgent {
 						sensorValue = GOAL;
 					}
 					else {
+						//%%%ISSUE: This will cause the plan to always fail in cases where a transition from a state goes back to itself
 						sensorValue = TRANSITION_ONLY;
 					}
 					int charIndex = findAlphabetIndex(pathToParse.charAt(i));
@@ -592,7 +593,14 @@ public class StateMachineAgent {
 						System.out.println("character: " + pathToParse.charAt(i));
 					}
 					System.out.println(charIndex + "");
-					plan.add(new Episode(pathToParse.charAt(i), sensorValue, transitionRow[charIndex]));
+					int episodeState;
+					if (transitionRow[charIndex] == GOAL_STATE) {
+						episodeState = INIT_STATE;
+					}
+					else {
+						episodeState = transitionRow[charIndex];
+					}
+					plan.add(new Episode(pathToParse.charAt(i), sensorValue, episodeState));
 					if(transitionRow[charIndex] != -1) {
 						transitionRow = agentTransitionTable.get(transitionRow[charIndex]);
 					}
@@ -600,7 +608,7 @@ public class StateMachineAgent {
 
 				currentPlan = plan;
 				hasPlan = true;
-				if (plan.size() == 0) {
+				if (plan.size() < 2) {
 					currentPlan = null;
 					hasPlan = false;
 				}
@@ -665,7 +673,7 @@ public class StateMachineAgent {
 
 		//If I have an active plan, extract the next action from that plan
 		else if (currentPlan != null && currentPlan.size() != 0) {
-			Episode currEp = currentPlan.get(planIndex);
+			Episode currEp = currentPlan.get(planIndex+1);
 			return currEp.command;
 		}
 
@@ -754,7 +762,7 @@ public class StateMachineAgent {
 
 		//Change all transitions to state2 to transitions to state1
 		for (int i = 0; i < agentTransitionTable.size(); i++) {
-			for (int j = 0; j < alphabet.length; i++) {
+			for (int j = 0; j < alphabet.length; j++) {
 				if (agentTransitionTable.get(i)[j] == state2) {
 					agentTransitionTable.get(i)[j] = state1;
 				}
@@ -885,7 +893,7 @@ public class StateMachineAgent {
 
 			//Advance the plan and verify that the sensors match
 			this.planIndex++;
-			Episode currPlanEp = this.currentPlan.get(this.planIndex);
+			Episode currPlanEp = this.currentPlan.get(this.planIndex+1);
 			if (currPlanEp.sensorValue != mergedSensors) {
 				// %%%DEBUG
 				System.out.println("Our plan failed!");
@@ -907,8 +915,9 @@ public class StateMachineAgent {
 
 			//If we've reached the goal episode for the plan the remove it
 			//And verify all hypotheses
-			if (currentPlan != null && this.planIndex >= this.currentPlan.size() - 1) {
+			if (currentPlan != null && this.planIndex >= this.currentPlan.size() - 2) {
 				this.currentPlan = null;
+				this.planIndex = -1;
 				//if this was a plan to reach the goal then any hypothetic
 				//equivalencies need to be accepted
 				if (currPlanEp.stateID == INIT_STATE) {
@@ -974,10 +983,16 @@ public class StateMachineAgent {
 					return;
 				}
 				int[] equivRow = agentTransitionTable.get(equivEpisode.stateID);
+				
+				//Make sure the equiv episode is not the current one
+				if (equivIndex >= episodicMemory.size() - 1) return;
 
 				//verify this equiv state has a compatible transition table entry to
 				//current state
 				if (!isCompatibleRow(row, equivRow)) return;
+				
+				//Make sure that the two states are not the same
+				if (equivEpisode.stateID == this.currentState) return;
 
 				//verify that we haven't already discovered that these
 				//states aren't equal
@@ -992,7 +1007,6 @@ public class StateMachineAgent {
 					}
 				}
 				
-				if (equivEpisode.stateID == this.currentState) return;
 				//hypothesize that equiv state equals the current state
 				currentHypothesis = new int[2];
 				currentHypothesis[0] = equivEpisode.stateID;
