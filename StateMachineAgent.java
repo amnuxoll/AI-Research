@@ -1060,6 +1060,9 @@ public class StateMachineAgent {
         System.out.println();
 
         for (int i = 0; i < agentTransitionTable.size(); i++) {
+        	if (agentTransitionTable.get(i)[0] == DELETED) {
+        		continue;
+        	}
             System.out.printf("%3d: ", i);
 
             for (int j = 0; j < alphabet.length; j++) {
