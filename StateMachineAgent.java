@@ -846,6 +846,29 @@ public class StateMachineAgent {
 	 */
 	private boolean isCompatibleRow(int[] row1, int[] row2) {
 		System.out.println("Checking if rows are compatible");
+		
+		//A deleted row is incompatible with everything
+		if (row1[0] == DELETED || row2[0] == DELETED) {
+			return false;
+		}
+		
+		//%%%IMPORTANT: If the rule that a state must have so many transitions to itself is removed, this will
+		//no longer function properly and will need to be changed
+		//The goal row should NEVER be merged
+		boolean notGoal1 = false;
+		boolean notGoal2 = false;
+		for (int i = 0; i < row1.length; i++) {
+			if (row1[i] != GOAL_STATE) {
+				notGoal1 = true;
+			}
+			if (row2[i] != GOAL_STATE) {
+				notGoal2 = true;
+			}
+		}
+		if (!notGoal1 || !notGoal2) {
+			return false;
+		}
+		
 		// Go through each entry in the rows to compare them
 		for(int i = 0; i < row1.length; i++) { 
 			// If the rows are not equivalent
@@ -1005,6 +1028,11 @@ public class StateMachineAgent {
 							&& nonEquivalentStates.get(i)[0] == this.currentState) {
 						return;
 					}
+				}
+				
+				//Don't make a hypothesis that any state is equal to the goal state
+				if (equivEpisode.stateID == 0 || currentState == 0) {
+					return;
 				}
 				
 				//hypothesize that equiv state equals the current state
