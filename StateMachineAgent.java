@@ -71,6 +71,7 @@ public class StateMachineAgent {
 	 */
 	public StateMachineAgent() {
 		//int[][] testTransitions = new int[][] {{2, 1, 0},{1, 0, 2},{2, 2, 2}};
+		//int[][] testTransitions = new int[][]{{0,1},{1,2},{2,2}};
 		int[][] testTransitions = new int[][]{{0,1},{1,1}};
 		//env = new StateMachineEnvironment(testTransitions, 3, 3);
 		env = new StateMachineEnvironment(testTransitions, 2, 2);
@@ -585,7 +586,7 @@ public class StateMachineAgent {
 						sensorValue = GOAL;
 					}
 					else {
-						//%%%ISSUE: This will cause the plan to always fail in cases where a transition from a state goes back to itself
+						//%%%ISSUE (maybe): This will cause the plan to always fail in cases where a transition from a state goes back to itself
 						sensorValue = TRANSITION_ONLY;
 					}
 					int charIndex = findAlphabetIndex(pathToParse.charAt(i));
@@ -791,7 +792,7 @@ public class StateMachineAgent {
                    is actually false.  Ignore for now.
 	 */
 	private void cleanupFailedPlan() {
-		if(currentPlan.size() >= 2 && currentPlan.get(currentPlan.size() - 2).sensorValue == GOAL) {
+		if(currentPlan.size() >= 2 /*&& (currentPlan.get(currentPlan.size() - 2).sensorValue == GOAL || currentPlan.get(currentPlan.size() - 1).sensorValue == GOAL)*/) {
 			nonEquivalentStates.add(currentHypothesis);
 			currentHypothesis = null;
 			int[] newRow = new int[alphabet.length];
