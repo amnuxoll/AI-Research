@@ -1,7 +1,6 @@
 package stateMachineAgent;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 /**
  * Used by the state machine agent to store a sequence of steps in the state
