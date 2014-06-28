@@ -491,6 +491,9 @@ public class StateMachineAgent {
 	 * @param targetID  id of the state we want to reach
 	 */
 	private void makePlanToState(int startID, int targetID) {
+		
+		if(startID == 0) 
+			System.out.println("Cats :3");
 
         //each path is a sequence of commands to reach the target
         //state from the Nth state
@@ -512,7 +515,7 @@ public class StateMachineAgent {
 
 			//Move through each state that doesn't have a path yet. Find the
 			//transition from that state to the current state.
-			for (int i = 0; i < agentTransitionTable.size(); i++) {
+			for (int i = 1; i < agentTransitionTable.size(); i++) {
 
 				//skip the ones that have a path
 				if (!paths[i].equals("")) continue;
@@ -592,7 +595,7 @@ public class StateMachineAgent {
         System.out.println("Plan from " + startID + " to " + targetID);
         printPlan(currentPlan);
         printStateMachine();
-        if (currentPlan != null) System.exit(0);
+        //if (currentPlan != null) System.exit(0);
         
 
 	}//makePlanToState
@@ -807,6 +810,9 @@ public class StateMachineAgent {
         }
         else if (mergedSensors != GOAL) {
             currentState = agentTransitionTable.get(lastState)[actionIndex];
+            if(currentState == GOAL_STATE){ 
+            	System.out.println("Cats :3");
+            }
         }
         else {
             agentTransitionTable.get(lastState)[actionIndex] = GOAL_STATE;
@@ -861,20 +867,23 @@ public class StateMachineAgent {
 		//%%%IMPORTANT: If the rule that a state must have so many transitions to itself is removed, this will
 		//no longer function properly and will need to be changed
 		//The goal row should NEVER be merged
-		boolean notGoal1 = false;
-		boolean notGoal2 = false;
+		boolean goal1 = true;
+		boolean goal2 = true;
 		for (int i = 0; i < row1.length; i++) {
 			if (row1[i] != GOAL_STATE) {
-				notGoal1 = true;
+				goal1 = false;
 			}
 			if (row2[i] != GOAL_STATE) {
-				notGoal2 = true;
+				goal2 = false;
 			}
 		}
-		if (!notGoal1 || !notGoal2) {
+		if (goal1 || goal2) {
 			return false;
 		}
 
+		
+		boolean knownShared = false;
+		
 		// Go through each entry in the rows to compare them
 		for(int i = 0; i < row1.length; i++) { 
 			// If the rows are not equivalent
@@ -884,10 +893,13 @@ public class StateMachineAgent {
 					return false;
 				}
 			}
+		
+			// Ensure there is at least one known match between the two rows
+			if (row1[i] == row2[i] && row1[i] != UNKNOWN_TRANSITION && row2[i] != UNKNOWN_TRANSITION) {
+				knownShared = true;
+			}
 		}
-
-		return true;
-
+		return knownShared;
 	}
 
 	/**
@@ -923,7 +935,9 @@ public class StateMachineAgent {
 			//Advance the plan and verify that the sensors match
 			this.planIndex++;
 			Episode currPlanEp = this.currentPlan.get(this.planIndex+1);
-			if (currPlanEp.sensorValue != mergedSensors) {
+			//TODO: We are only comparing sensor values for the last step of the plan. At some point we will have to 
+			//check it every step.
+			if (currPlanEp.sensorValue != mergedSensors && this.planIndex == this.currentPlan.size() - 2) {
 				// %%%DEBUG
 				System.out.println("Our plan failed!");
 				//Plan has failed
@@ -971,12 +985,6 @@ public class StateMachineAgent {
 
 			//If I don't know where I am create a new state and update the table
 			if (this.currentState == UNKNOWN_TRANSITION) {
-				//if I just reached the goal then I know that I'm at the init
-				//state now
-				if (mergedSensors == GOAL) {
-					this.currentState = INIT_STATE;
-					row[commandIndex] = GOAL_STATE;
-				}
 				//Create a new state for this new circumstance if we are not at the goal
 				if (mergedSensors != GOAL) {
 					currentStateID++;
@@ -1037,7 +1045,7 @@ public class StateMachineAgent {
 				}
 
 				//Don't make a hypothesis that any state is equal to the goal state
-				if (equivEpisode.stateID == 0 || currentState == 0) {
+				if (equivEpisode.stateID == GOAL_STATE || currentState == GOAL_STATE) {
 					return;
 				}
 
