@@ -381,27 +381,32 @@ public class StateMachineAgent {
 		if (lastGoalIndex == -1) {
 			return -1;
 		}
+		
+		//If we've just reached the goal, then there is nothing to match
+		if (lastGoalIndex == episodicMemory.size() - 1)
+		{
+			return -1;
+		}
+		
+		//Find the longest matching subsequence
 		int maxStringIndex = -1;
 		int maxStringLength = 0;
 		int currStringLength;
-		boolean actionMatched;
-		for (int i = lastGoalIndex; i >= 0; i--) {
-			actionMatched = episodicMemory.get(i).equals(episodicMemory.get(episodicMemory.size() - 1));
-			if (actionMatched) {
-				currStringLength = matchedMemoryStringLength(i);
-				if (currStringLength > maxStringLength) {
-					maxStringLength = currStringLength;
-					maxStringIndex = i;
-				}
+		for (int i = lastGoalIndex-1; i >= 0; i--) {
+			currStringLength = matchedMemoryStringLength(i);
+			if (currStringLength > maxStringLength) {
+				maxStringLength = currStringLength;
+				maxStringIndex = i;
 			}
-		}
+		}//for
+		
 		if (maxStringIndex < 0) {
 			return 0;
 		}
 		else {
 			return maxStringIndex;
 		}
-	}
+	}//maxMatchedStringIndex
 
 	/**
 	 * Starts from a given index and the end of the Agent's episodic memory and moves backwards, returning
@@ -413,20 +418,17 @@ public class StateMachineAgent {
 		int length = 0;
 		int indexOfMatchingAction = episodicMemory.size() - 1;
 		boolean match;
-		Episode current;
-		Episode matching;
-		for (int i = endOfStringIndex; i > 0; i--) {			
-			//Check that the episodes match up
-			current = episodicMemory.get(i);
-			matching = episodicMemory.get(indexOfMatchingAction);
+		for (int i = endOfStringIndex; i >= 0; i--) {			
+			//We want to compare the command from the prev episode and the 
+			//sensors from the "right now" episode to the sequence at the 
+			//index indicated by 'i'
+			char currCmd = episodicMemory.get(indexOfMatchingAction - 1).command;
+			int currSensors = episodicMemory.get(indexOfMatchingAction).sensorValue;
+			char prevCmd = episodicMemory.get(i).command;
+			int prevSensors = episodicMemory.get(i+1).sensorValue;
 			
-			match = (current.sensorValue == matching.sensorValue) && (current.stateID == matching.stateID);
+			match = ( (currCmd == prevCmd) && (currSensors == prevSensors) );
 			
-			current = episodicMemory.get(i - 1);
-			matching = episodicMemory.get(indexOfMatchingAction - 1);
-			
-			match = match && (current.command == matching.command);
-					
 			if (match) {
 				length++;
 				indexOfMatchingAction--;
@@ -434,10 +436,10 @@ public class StateMachineAgent {
 			else {
 				return length;
 			}
-		}
+		}//for
 
 		return length;
-	}
+	}//matchedMemoryStringLength
 
 
 	/**
