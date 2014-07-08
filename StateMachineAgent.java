@@ -381,13 +381,13 @@ public class StateMachineAgent {
 		if (lastGoalIndex == -1) {
 			return -1;
 		}
-		
+
 		//If we've just reached the goal, then there is nothing to match
 		if (lastGoalIndex == episodicMemory.size() - 1)
 		{
 			return -1;
 		}
-		
+
 		//Find the longest matching subsequence
 		int maxStringIndex = -1;
 		int maxStringLength = 0;
@@ -399,7 +399,7 @@ public class StateMachineAgent {
 				maxStringIndex = i;
 			}
 		}//for
-		
+
 		if (maxStringIndex < 0) {
 			return 0;
 		}
@@ -426,9 +426,9 @@ public class StateMachineAgent {
 			int currSensors = episodicMemory.get(indexOfMatchingAction).sensorValue;
 			char prevCmd = episodicMemory.get(i).command;
 			int prevSensors = episodicMemory.get(i+1).sensorValue;
-			
+
 			match = ( (currCmd == prevCmd) && (currSensors == prevSensors) );
-			
+
 			if (match) {
 				length++;
 				indexOfMatchingAction--;
@@ -507,8 +507,8 @@ public class StateMachineAgent {
 	 * @param targetID  id of the state we want to reach
 	 */
 	private void makePlanToState(int startID, int targetID) {
-        //each path is a sequence of commands to reach the target
-        //state from the Nth state
+		//each path is a sequence of commands to reach the target
+		//state from the Nth state
 		String[] paths = new String[agentTransitionTable.size()];
 		for (int i = 0; i < paths.length; i++) {
 			paths[i] = "";
@@ -551,29 +551,29 @@ public class StateMachineAgent {
 				String pathToParse = paths[startID];
 				int[] transitionRow = agentTransitionTable.get(startID);
 				int sensorValue = TRANSITION_ONLY;
-                int episodeState = startID;
+				int episodeState = startID;
 
-                //for each command in the path
+				//for each command in the path
 				for (int i = 0; i < pathToParse.length(); i++) {
-                    //add the current episode
+					//add the current episode
 					plan.add(new Episode(pathToParse.charAt(i), sensorValue, episodeState));
 
-                    //define the next sensor values in the plan
-                    //TODO: for now this isn't correct.  The code only
-                    //cares about whether the agent should sense goal or not. In
-                    //the future, we should have the correct sensor values here
-                    //so we can recognize if the expected sensor values don't
-                    //match actual and abort the plan then rather than waiting
-                    //until we should reach the goal
+					//define the next sensor values in the plan
+					//TODO: for now this isn't correct.  The code only
+					//cares about whether the agent should sense goal or not. In
+					//the future, we should have the correct sensor values here
+					//so we can recognize if the expected sensor values don't
+					//match actual and abort the plan then rather than waiting
+					//until we should reach the goal
 					if (targetID == 0 && i == pathToParse.length() - 1) {
 						sensorValue = GOAL;
 					}
 					else {
 						sensorValue = TRANSITION_ONLY;
 					}
-                    
-                    //figure out what state the command takes us to
-                    int charIndex = findAlphabetIndex(pathToParse.charAt(i));
+
+					//figure out what state the command takes us to
+					int charIndex = findAlphabetIndex(pathToParse.charAt(i));
 					if(charIndex == -1){
 						System.out.println("character: " + pathToParse.charAt(i));
 					}
@@ -584,31 +584,35 @@ public class StateMachineAgent {
 						episodeState = transitionRow[charIndex];
 					}
 
-                    //update to transition row assoc'd with new curr state
+					//update to transition row assoc'd with new curr state
 					if(transitionRow[charIndex] != -1) {
 						transitionRow = agentTransitionTable.get(transitionRow[charIndex]);
 					}
 				}//for
 
-                //Tack the goal state on the end to complete the plan
-                plan.add(new Episode(UNKNOWN_COMMAND, sensorValue, episodeState));
+				//Tack the goal state on the end to complete the plan
+				plan.add(new Episode(UNKNOWN_COMMAND, sensorValue, episodeState));
 
-                //Voila!
+				//Voila!
 				currentPlan = plan;
 
-                //Any valid plan must have at least two steps
+				//Any valid plan must have at least two steps
 				if (plan.size() < 2) {
 					currentPlan = null;
 				}
 			}//if
 		}//while
 
-        //TODO: Debug
-        System.out.println("Plan from " + startID + " to " + targetID);
-        printPlan(currentPlan);
-        printStateMachine();
-        //if (currentPlan != null) System.exit(0);
-        
+		planIndex = -1;
+		//TODO: Debug
+		System.out.println("Plan from " + startID + " to " + targetID);
+		printPlan(currentPlan);
+		printStateMachine();
+		if (currentPlan == null) {
+			int x = 5;
+		}
+		//if (currentPlan != null) System.exit(0);
+
 
 	}//makePlanToState
 
@@ -661,6 +665,9 @@ public class StateMachineAgent {
 	 */
 	private char selectNextCommand() {
 		char cmd = ' '; //the command to return
+		if (currentPlan != null) {
+			int x = 2;
+		}
 
 		//If I've never found a path to the goal I can only act randomly until I
 		//find the goal
@@ -682,6 +689,16 @@ public class StateMachineAgent {
 				if (agentTransitionTable.get(currentState)[i] == UNKNOWN_TRANSITION) {
 					cmd = getUnknown(currentState);
 					if (cmd != UNKNOWN_COMMAND) return cmd;
+				}
+			}
+		}
+
+		//Find and delete any unreachable states
+		for (int i = 2; i < agentTransitionTable.size(); i++) {
+			if (agentTransitionTable.get(i)[0] != DELETED) {
+				makePlanToState(INIT_STATE, i);
+				if (currentPlan == null) {
+					agentTransitionTable.get(i)[0] = DELETED;
 				}
 			}
 		}
@@ -742,16 +759,20 @@ public class StateMachineAgent {
 			agentTransitionTable.get(i)[0] = DELETED;
 		}
 		addedInPlan = new Vector<Integer>();
-		
+
 		//Replace states in previous episodes with correct ones
 		int k = 0;
 		for (int i = episodicMemory.size() - currentPlan.size(); i < episodicMemory.size(); i++) {
 			episodicMemory.get(i).stateID = currentPlan.get(k).stateID;
 			k++;
 		}
-		
+
 		printStateMachine();
 		equivalentStates.add(currentHypothesis);
+		if (currentHypothesis[1] == INIT_STATE) {
+			currentHypothesis[1] = currentHypothesis[0];
+			currentHypothesis[0] = INIT_STATE;
+		}
 		mergeTwoStates(currentHypothesis[0], currentHypothesis[1]);
 		for (int i = 0; i < agentTransitionTable.size(); i++) {
 			for (int j = i + 1; j < agentTransitionTable.size(); j++) {
@@ -760,6 +781,7 @@ public class StateMachineAgent {
 				}
 			}
 		}
+
 	}
 
 	/**
@@ -805,55 +827,54 @@ public class StateMachineAgent {
                    state as per 7d above.  I'm not sure what to do
                    here as this indicates that a previous equivalency
                    is actually false.  Ignore for now.
-    */
+	 */
 	private void cleanupFailedPlan(int mergedSensors) {
 		//Reset the list of states added while following this plan
 		addedInPlan = new Vector<Integer>();
-		
-        if(currentPlan.size() <= 1)
-        {
+
+		if(currentPlan.size() <= 1)
+		{
 			//ignore for now? reset?
-            System.out.println("Plan should never be of length 1!");
-            System.exit(-1);
-        }
+			System.out.println("Plan should never be of length 1!");
+			System.exit(-1);
+		}
 
-        //Add the current hypothesis to the list of non equivalent states if the hypothesis exists
-        if (currentHypothesis != null)
-        {
-            nonEquivalentStates.add(currentHypothesis);
-        }
-        currentHypothesis = null;
-        Episode lastEpisode = episodicMemory.get(episodicMemory.size() - 1);
-        char action = lastEpisode.command;
-        int lastState = lastEpisode.stateID;
-        int actionIndex = findAlphabetIndex(action);
+		//Add the current hypothesis to the list of non equivalent states if the hypothesis exists
+		if (currentHypothesis != null)
+		{
+			nonEquivalentStates.add(currentHypothesis);
+		}
+		currentHypothesis = null;
+		Episode lastEpisode = episodicMemory.get(episodicMemory.size() - 1);
+		char action = lastEpisode.command;
+		int lastState = lastEpisode.stateID;
+		int actionIndex = findAlphabetIndex(action);
 
-        //If we took an unknown transition from the previous state, make a new state
-        if (agentTransitionTable.get(lastState)[actionIndex] == UNKNOWN_TRANSITION && mergedSensors != GOAL) {
-            currentStateID++;
-            currentState = currentStateID;
-            //add a row to the transition table to support this
-            int[] newRow = new int[alphabet.length];
-            for (int i = 0; i < newRow.length; i++) {
-                newRow[i] = UNKNOWN_TRANSITION;
-            }
-            agentTransitionTable.add(newRow);
-            agentTransitionTable.get(lastState)[actionIndex] = currentStateID;
-        }
-        else if (mergedSensors != GOAL) {
-            currentState = agentTransitionTable.get(lastState)[actionIndex];
-            if(currentState == GOAL_STATE){ 
-            	System.out.println("Cats :3");
-            }
-        }
-        else {
-            agentTransitionTable.get(lastState)[actionIndex] = GOAL_STATE;
-            currentState = INIT_STATE;
-        }
-        episodicMemory.add(new Episode(UNKNOWN_COMMAND, mergedSensors, currentState));   		
+		//If we took an unknown transition from the previous state, make a new state
+		if (agentTransitionTable.get(lastState)[actionIndex] == UNKNOWN_TRANSITION && mergedSensors != GOAL) {
+			currentStateID++;
+			currentState = currentStateID;
+			//add a row to the transition table to support this
+			int[] newRow = new int[alphabet.length];
+			for (int i = 0; i < newRow.length; i++) {
+				newRow[i] = UNKNOWN_TRANSITION;
+			}
+			agentTransitionTable.add(newRow);
+			agentTransitionTable.get(lastState)[actionIndex] = currentStateID;
+		}
+		else if (mergedSensors != GOAL) {
+			currentState = agentTransitionTable.get(lastState)[actionIndex];
+			if(currentState == GOAL_STATE){ 
+				System.out.println("Cats :3");
+			}
+		}
+		else {
+			agentTransitionTable.get(lastState)[actionIndex] = GOAL_STATE;
+			currentState = INIT_STATE;
+		}
+		episodicMemory.add(new Episode(UNKNOWN_COMMAND, mergedSensors, currentState));
 
-
-        //Remove the current plan and reset the plan index
+		//Remove the current plan and reset the plan index
 		currentPlan = null;
 		planIndex = -1;
 
@@ -889,7 +910,7 @@ public class StateMachineAgent {
 	 *
 	 */
 	private boolean isCompatibleRow(int[] row1, int[] row2) {
-		System.out.println("Checking if rows are compatible");
+		//System.out.println("Checking if rows are compatible");
 
 		//A deleted row is incompatible with everything
 		if (row1[0] == DELETED || row2[0] == DELETED) {
@@ -913,9 +934,9 @@ public class StateMachineAgent {
 			return false;
 		}
 
-		
+
 		boolean knownShared = false;
-		
+
 		// Go through each entry in the rows to compare them
 		for(int i = 0; i < row1.length; i++) { 
 			// If the rows are not equivalent
@@ -925,7 +946,7 @@ public class StateMachineAgent {
 					return false;
 				}
 			}
-		
+
 			// Ensure there is at least one known match between the two rows
 			if (row1[i] == row2[i] && row1[i] != UNKNOWN_TRANSITION && row2[i] != UNKNOWN_TRANSITION) {
 				knownShared = true;
@@ -975,7 +996,7 @@ public class StateMachineAgent {
 				//Plan has failed
 				cleanupFailedPlan(mergedSensors);
 			}
-			
+
 			//Examine the transition to extract what state I believe I'm in
 			Episode prev = episodicMemory.get(episodicMemory.size() - 1);
 			if (prev.stateID < 0) {
@@ -1181,21 +1202,21 @@ public class StateMachineAgent {
 		System.out.println();
 	}
 
-    /** prints out a plan for debugging */
-    public void printPlan(ArrayList<Episode> plan)
-    {
-        System.out.print("Plan: ");
-        if (plan == null)
-        {
-            System.out.println("null");
-            return;
-        }
-        for(Episode ep : plan)
-        {
-            System.out.print(ep + ",");
-        }//for
-        System.out.println();
-    }
-       
+	/** prints out a plan for debugging */
+	public void printPlan(ArrayList<Episode> plan)
+	{
+		System.out.print("Plan: ");
+		if (plan == null)
+		{
+			System.out.println("null");
+			return;
+		}
+		for(Episode ep : plan)
+		{
+			System.out.print(ep + ",");
+		}//for
+		System.out.println();
+	}
+
 
 }//class StateMachineAgent
