@@ -336,7 +336,6 @@ public class StateMachineAgent {
 		while (!mappingComplete()) {
 			currCommand = selectNextCommand();
 			makeMove(currCommand);
-			printStateMachine();
 		}
 		printStateMachine();
 	}
@@ -396,7 +395,7 @@ public class StateMachineAgent {
 			currStringLength = matchedMemoryStringLength(i);
 			if (currStringLength > maxStringLength) {
 				maxStringLength = currStringLength;
-				maxStringIndex = i;
+				maxStringIndex = i+1;
 			}
 		}//for
 
@@ -604,12 +603,12 @@ public class StateMachineAgent {
 		}//while
 
 		planIndex = -1;
+
 		//TODO: Debug
 		System.out.println("Plan from " + startID + " to " + targetID);
 		printPlan(currentPlan);
-		printStateMachine();
 		if (currentPlan == null) {
-			int x = 5;
+			System.out.println("foo");
 		}
 		//if (currentPlan != null) System.exit(0);
 
@@ -767,7 +766,6 @@ public class StateMachineAgent {
 			k++;
 		}
 
-		printStateMachine();
 		equivalentStates.add(currentHypothesis);
 		if (currentHypothesis[1] == INIT_STATE) {
 			currentHypothesis[1] = currentHypothesis[0];
@@ -948,11 +946,13 @@ public class StateMachineAgent {
 			}
 
 			// Ensure there is at least one known match between the two rows
-			if (row1[i] == row2[i] && row1[i] != UNKNOWN_TRANSITION && row2[i] != UNKNOWN_TRANSITION) {
-				knownShared = true;
-			}
+			//TODO:  Put this back in?  Removed by :AMN: and HNK because the current state is likely to 
+			// be brand new and thus have -1 for all transitions out.  How can this ever pass?
+//			if (row1[i] == row2[i] && row1[i] != UNKNOWN_TRANSITION && row2[i] != UNKNOWN_TRANSITION) {
+//				knownShared = true;
+//			}
 		}
-		return knownShared;
+		return true;
 	}
 
 	/**
@@ -965,6 +965,10 @@ public class StateMachineAgent {
 	 */
 	private void makeMove(char cmd) {
 
+        //TODO: REMOVE (DEBUG)
+        System.out.println("Executing command: " + cmd);
+
+        
 		possibleBest.add(cmd);
 
 		//Complete the current episode with the given command
@@ -1072,7 +1076,7 @@ public class StateMachineAgent {
 					row[commandIndex] = currentStateID;
 					currentState = currentStateID;
 
-					//%%%TBD  add a row to the transition table to support this
+					//add a row to the transition table to support this
 					int[] newRow = new int[alphabet.length];
 					for (int i = 0; i < newRow.length; i++) {
 						newRow[i] = UNKNOWN_TRANSITION;
@@ -1091,6 +1095,18 @@ public class StateMachineAgent {
 			Episode now = new Episode(UNKNOWN_COMMAND, mergedSensors, this.currentState);
 			episodicMemory.add(now);
 			//this.currentState = currentStateID;
+			
+			//TODO: REMOVE (DEBUG)
+			printStateMachine();
+			System.out.print("  ");
+			for(int i = 0; i < this.episodicMemory.size(); ++i) {
+				System.out.print("" + i + "        ");
+			}
+			System.out.println();
+			System.out.println(this.episodicMemory);
+			
+			//If we've reached the GOAL and reset then there's no need to do anything else
+			if (this.currentState == INIT_STATE) return;
 
 			//Find data about previous state that may be the same as the current
 			//state
@@ -1108,6 +1124,7 @@ public class StateMachineAgent {
 
 				//verify this equiv state has a compatible transition table entry to
 				//current state
+				row = agentTransitionTable.get(this.currentState);
 				if (!isCompatibleRow(row, equivRow)) return;
 
 				//Make sure that the two states are not the same
@@ -1135,6 +1152,10 @@ public class StateMachineAgent {
 				currentHypothesis = new int[2];
 				currentHypothesis[0] = equivEpisode.stateID;
 				currentHypothesis[1] = this.currentState;
+
+                //TODO:  REMOVE (DEBUG)
+                System.out.println("hypothesis: " + equivEpisode.stateID +
+                                    " == " + this.currentState);
 
 				//Make a plan to reach the goal based upon the hypothesis
 				makePlanToState(equivEpisode.stateID, GOAL_STATE);
@@ -1187,7 +1208,7 @@ public class StateMachineAgent {
 			if (agentTransitionTable.get(i)[0] == DELETED) {
 				continue;
 			}
-			System.out.printf("%3d: ", i);
+			System.out.printf("%s%3d: ", currentState == i ? "*" : " ", i);
 
 			for (int j = 0; j < alphabet.length; j++) {
 				System.out.printf("%3d", agentTransitionTable.get(i)[j]);
