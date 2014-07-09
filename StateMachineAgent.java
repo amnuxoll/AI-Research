@@ -336,6 +336,7 @@ public class StateMachineAgent {
 		while (!mappingComplete()) {
 			currCommand = selectNextCommand();
 			makeMove(currCommand);
+			printStateMachine();
 		}
 		printStateMachine();
 	}
@@ -994,7 +995,9 @@ public class StateMachineAgent {
 			Episode currPlanEp = this.currentPlan.get(this.planIndex+1);
 			//TODO: We are only comparing sensor values for the last step of the plan. At some point we will have to 
 			//check it every step.
-			if (currPlanEp.sensorValue != mergedSensors && this.planIndex == this.currentPlan.size() - 2) {
+			if (planIndex == currentPlan.size() - 1 && 
+					((currPlanEp.sensorValue == GOAL && mergedSensors != GOAL) || 
+							(currPlanEp.sensorValue != GOAL && currentState != currPlanEp.stateID))) {
 				// %%%DEBUG
 				System.out.println("Our plan failed!");
 				//Plan has failed
