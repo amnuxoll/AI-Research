@@ -775,7 +775,7 @@ public class StateMachineAgent {
 		mergeTwoStates(currentHypothesis[0], currentHypothesis[1]);
 		for (int i = 0; i < agentTransitionTable.size(); i++) {
 			for (int j = i + 1; j < agentTransitionTable.size(); j++) {
-				if (isCompatibleRow(agentTransitionTable.get(i), agentTransitionTable.get(j))) {
+				if (isCompatibleRow(agentTransitionTable.get(i), agentTransitionTable.get(j), true)) {
 					mergeTwoStates(i, j);
 				}
 			}
@@ -850,28 +850,28 @@ public class StateMachineAgent {
 		int actionIndex = findAlphabetIndex(action);
 
 		//If we took an unknown transition from the previous state, make a new state
-		if (agentTransitionTable.get(lastState)[actionIndex] == UNKNOWN_TRANSITION && mergedSensors != GOAL) {
-			currentStateID++;
-			currentState = currentStateID;
-			//add a row to the transition table to support this
-			int[] newRow = new int[alphabet.length];
-			for (int i = 0; i < newRow.length; i++) {
-				newRow[i] = UNKNOWN_TRANSITION;
-			}
-			agentTransitionTable.add(newRow);
-			agentTransitionTable.get(lastState)[actionIndex] = currentStateID;
-		}
-		else if (mergedSensors != GOAL) {
-			currentState = agentTransitionTable.get(lastState)[actionIndex];
-			if(currentState == GOAL_STATE){ 
-				System.out.println("Cats :3");
-			}
-		}
-		else {
-			agentTransitionTable.get(lastState)[actionIndex] = GOAL_STATE;
-			currentState = INIT_STATE;
-		}
-		episodicMemory.add(new Episode(UNKNOWN_COMMAND, mergedSensors, currentState));
+//		if (agentTransitionTable.get(lastState)[actionIndex] == UNKNOWN_TRANSITION && mergedSensors != GOAL) {
+//			currentStateID++;
+//			currentState = currentStateID;
+//			//add a row to the transition table to support this
+//			int[] newRow = new int[alphabet.length];
+//			for (int i = 0; i < newRow.length; i++) {
+//				newRow[i] = UNKNOWN_TRANSITION;
+//			}
+//			agentTransitionTable.add(newRow);
+//			agentTransitionTable.get(lastState)[actionIndex] = currentStateID;
+//		}
+//		else if (mergedSensors != GOAL) {
+//			currentState = agentTransitionTable.get(lastState)[actionIndex];
+//			if(currentState == GOAL_STATE){ 
+//				System.out.println("Cats :3");
+//			}
+//		}
+//		else {
+//			agentTransitionTable.get(lastState)[actionIndex] = GOAL_STATE;
+//			currentState = INIT_STATE;
+//		}
+//		episodicMemory.add(new Episode(UNKNOWN_COMMAND, mergedSensors, currentState));
 
 		//Remove the current plan and reset the plan index
 		currentPlan = null;
@@ -908,7 +908,7 @@ public class StateMachineAgent {
 	 * unknown are the same value.
 	 *
 	 */
-	private boolean isCompatibleRow(int[] row1, int[] row2) {
+	private boolean isCompatibleRow(int[] row1, int[] row2, boolean hypothesisMerged) {
 		//System.out.println("Checking if rows are compatible");
 
 		//A deleted row is incompatible with everything
@@ -935,7 +935,8 @@ public class StateMachineAgent {
 
 
 		boolean knownShared = false;
-
+		if (!hypothesisMerged) knownShared = true;
+		
 		// Go through each entry in the rows to compare them
 		for(int i = 0; i < row1.length; i++) { 
 			// If the rows are not equivalent
@@ -949,11 +950,12 @@ public class StateMachineAgent {
 			// Ensure there is at least one known match between the two rows
 			//TODO:  Put this back in?  Removed by :AMN: and HNK because the current state is likely to 
 			// be brand new and thus have -1 for all transitions out.  How can this ever pass?
-//			if (row1[i] == row2[i] && row1[i] != UNKNOWN_TRANSITION && row2[i] != UNKNOWN_TRANSITION) {
-//				knownShared = true;
-//			}
+			else if (row1[i] != UNKNOWN_TRANSITION && row2[i] != UNKNOWN_TRANSITION) {
+				knownShared = true;
+			}
 		}
-		return true;
+		return knownShared;
+		//return true;
 	}
 
 	/**
@@ -995,7 +997,7 @@ public class StateMachineAgent {
 			Episode currPlanEp = this.currentPlan.get(this.planIndex+1);
 			//TODO: We are only comparing sensor values for the last step of the plan. At some point we will have to 
 			//check it every step.
-			if (planIndex == currentPlan.size() - 1 && 
+			if (planIndex == currentPlan.size() - 2 && 
 					((currPlanEp.sensorValue == GOAL && mergedSensors != GOAL) || 
 							(currPlanEp.sensorValue != GOAL && currentState != currPlanEp.stateID))) {
 				// %%%DEBUG
@@ -1128,7 +1130,7 @@ public class StateMachineAgent {
 				//verify this equiv state has a compatible transition table entry to
 				//current state
 				row = agentTransitionTable.get(this.currentState);
-				if (!isCompatibleRow(row, equivRow)) return;
+				if (!isCompatibleRow(row, equivRow, false)) return;
 
 				//Make sure that the two states are not the same
 				if (equivEpisode.stateID == this.currentState) return;
