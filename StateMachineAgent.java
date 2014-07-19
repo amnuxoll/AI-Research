@@ -507,6 +507,7 @@ public class StateMachineAgent {
 	 * @param targetID  id of the state we want to reach
 	 */
 	private void makePlanToState(int startID, int targetID) {
+		
 		//each path is a sequence of commands to reach the target
 		//state from the Nth state
 		String[] paths = new String[agentTransitionTable.size()];
@@ -758,7 +759,6 @@ public class StateMachineAgent {
 		for (int i : addedInPlan) {
 			agentTransitionTable.get(i)[0] = DELETED;
 		}
-		addedInPlan = new Vector<Integer>();
 
 		//Replace states in previous episodes with correct ones
 		int k = 0;
@@ -848,30 +848,6 @@ public class StateMachineAgent {
 		char action = lastEpisode.command;
 		int lastState = lastEpisode.stateID;
 		int actionIndex = findAlphabetIndex(action);
-
-		//If we took an unknown transition from the previous state, make a new state
-//		if (agentTransitionTable.get(lastState)[actionIndex] == UNKNOWN_TRANSITION && mergedSensors != GOAL) {
-//			currentStateID++;
-//			currentState = currentStateID;
-//			//add a row to the transition table to support this
-//			int[] newRow = new int[alphabet.length];
-//			for (int i = 0; i < newRow.length; i++) {
-//				newRow[i] = UNKNOWN_TRANSITION;
-//			}
-//			agentTransitionTable.add(newRow);
-//			agentTransitionTable.get(lastState)[actionIndex] = currentStateID;
-//		}
-//		else if (mergedSensors != GOAL) {
-//			currentState = agentTransitionTable.get(lastState)[actionIndex];
-//			if(currentState == GOAL_STATE){ 
-//				System.out.println("Cats :3");
-//			}
-//		}
-//		else {
-//			agentTransitionTable.get(lastState)[actionIndex] = GOAL_STATE;
-//			currentState = INIT_STATE;
-//		}
-//		episodicMemory.add(new Episode(UNKNOWN_COMMAND, mergedSensors, currentState));
 
 		//Remove the current plan and reset the plan index
 		currentPlan = null;
@@ -1022,7 +998,9 @@ public class StateMachineAgent {
 					currentStateID++;
 					row[commandIndex] = currentStateID;
 					currentState = currentStateID;
-					addedInPlan.add(currentStateID);
+					if (currentPlan != null) {
+						addedInPlan.add(currentStateID);
+					}
 
 					//%%%TBD  add a row to the transition table to support this
 					int[] newRow = new int[alphabet.length];
