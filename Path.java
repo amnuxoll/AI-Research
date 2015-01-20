@@ -1,4 +1,3 @@
-package stateMachineAgent;
 
 import java.util.ArrayList;
 

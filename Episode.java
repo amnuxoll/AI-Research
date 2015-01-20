@@ -1,4 +1,3 @@
-package stateMachineAgent;
 
 public class Episode { 
 	

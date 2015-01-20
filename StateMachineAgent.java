@@ -1,4 +1,3 @@
-package stateMachineAgent;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -507,7 +506,6 @@ public class StateMachineAgent {
 	 * @param targetID  id of the state we want to reach
 	 */
 	private void makePlanToState(int startID, int targetID) {
-		
 		//each path is a sequence of commands to reach the target
 		//state from the Nth state
 		String[] paths = new String[agentTransitionTable.size()];
@@ -515,16 +513,47 @@ public class StateMachineAgent {
 			paths[i] = "";
 		}
 
+		findAllPaths(paths, startID, targetID);
+
+		parsePathToPlan(paths, startID, targetID);
+
+		planIndex = -1;
+
+		//TODO: Debug
+		System.out.println("Plan from " + startID + " to " + targetID);
+		printPlan(currentPlan);
+		if (currentPlan == null) {
+			System.out.println("foo");
+		}
+		//if (currentPlan != null) System.exit(0);
+
+
+	}//makePlanToState
+
+	/**
+	 * findAllPaths
+	 *
+	 * Helper function for makePlanToState that uses targetID to construct all paths
+	 *
+	 * @param paths array of possible paths to reach goal
+	 * @param startID first destination to reach goal from
+	 * @param targetID the state to reach/goal
+	 *
+	 */
+	private void findAllPaths(String[] paths, int startID, int targetID){
 		//Create a queue that initially only contains the target state
 		ArrayList<Integer> queue = new ArrayList<Integer>();
 		queue.add(targetID);
 		int currState;
 		int transitionChar;
 
+		//loop through each state and add paths to reach currState to the queue
 		while (!queue.isEmpty()) {
 			//Grab the element at the front of the queue
-			currState = queue.get(0);
-			queue.remove(0);
+			currState = queue.remove(0);
+
+			System.out.println("currState=" + currState);
+
 
 			//Move through each state that doesn't have a path yet. Find the
 			//transition from that state to the current state.
@@ -543,80 +572,81 @@ public class StateMachineAgent {
 				if (transitionChar != -1) {
 					paths[i] = alphabet[transitionChar] + paths[currState];
 					queue.add(i);
+
+					//if we find path to currstate from startID we can ignore the other states
+					if (i == startID) break;
+				}
+			}//for
+			//if we have found a path from the startID to the targetID we can ignore the other states
+			if (! paths[startID].equals("")) break;
+		}//while
+	}
+	
+	/**
+	 * parsePathToPlan
+	 *
+	 * Accepts path to state and converts it into a plan comprised of a series of episodic memories
+	 *
+	 * @param paths array of possible paths to reach goal
+	 * @param startID first destination to reach goal from
+	 * @param targetID the state to reach/goal
+	 *
+	 */
+	private void parsePathToPlan(String[] paths, int startID, int targetID){
+		if (!paths[startID].equals("")) { //if there is a path, enter
+			ArrayList<Episode> plan = new ArrayList<Episode>();
+			String pathToParse = paths[startID];
+			int[] transitionRow = agentTransitionTable.get(startID);
+			int sensorValue = TRANSITION_ONLY;
+			int episodeState = startID;
+
+			//for each command in the path
+			for (int i = 0; i < pathToParse.length(); i++) {
+				//add the current episode
+				plan.add(new Episode(pathToParse.charAt(i), sensorValue, episodeState));
+
+				//define the next sensor values in the plan
+				//TODO: for now this isn't correct.  The code only
+				//cares about whether the agent should sense goal or not. In
+				//the future, we should have the correct sensor values here
+				//so we can recognize if the expected sensor values don't
+				//match actual and abort the plan then rather than waiting
+				//until we should reach the goal
+				if (targetID == 0 && i == pathToParse.length() - 1) {
+					sensorValue = GOAL;
+				} else {
+					sensorValue = TRANSITION_ONLY;
+				}
+
+				//figure out what state the command takes us to
+				int charIndex = findAlphabetIndex(pathToParse.charAt(i));
+				if (charIndex == -1) {
+					System.out.println("character: " + pathToParse.charAt(i));
+				}
+				if (transitionRow[charIndex] == GOAL_STATE) {
+					episodeState = INIT_STATE; //magic teleport to goal
+				} else {
+					episodeState = transitionRow[charIndex];
+				}
+
+				//update to transition row assoc'd with new curr state
+				if (transitionRow[charIndex] != -1) {
+					transitionRow = agentTransitionTable.get(transitionRow[charIndex]);
 				}
 			}//for
 
-			//Make sure there is a path from startID, and if there is, parse the plan
-			if (!paths[startID].equals("")) {
-				ArrayList<Episode> plan = new ArrayList<Episode>();
-				String pathToParse = paths[startID];
-				int[] transitionRow = agentTransitionTable.get(startID);
-				int sensorValue = TRANSITION_ONLY;
-				int episodeState = startID;
+			//Tack the goal state on the end to complete the plan
+			plan.add(new Episode(UNKNOWN_COMMAND, sensorValue, episodeState));
 
-				//for each command in the path
-				for (int i = 0; i < pathToParse.length(); i++) {
-					//add the current episode
-					plan.add(new Episode(pathToParse.charAt(i), sensorValue, episodeState));
+			//Voila!
+			currentPlan = plan;
 
-					//define the next sensor values in the plan
-					//TODO: for now this isn't correct.  The code only
-					//cares about whether the agent should sense goal or not. In
-					//the future, we should have the correct sensor values here
-					//so we can recognize if the expected sensor values don't
-					//match actual and abort the plan then rather than waiting
-					//until we should reach the goal
-					if (targetID == 0 && i == pathToParse.length() - 1) {
-						sensorValue = GOAL;
-					}
-					else {
-						sensorValue = TRANSITION_ONLY;
-					}
-
-					//figure out what state the command takes us to
-					int charIndex = findAlphabetIndex(pathToParse.charAt(i));
-					if(charIndex == -1){
-						System.out.println("character: " + pathToParse.charAt(i));
-					}
-					if (transitionRow[charIndex] == GOAL_STATE) {
-						episodeState = INIT_STATE; //magic teleport to goal
-					}
-					else {
-						episodeState = transitionRow[charIndex];
-					}
-
-					//update to transition row assoc'd with new curr state
-					if(transitionRow[charIndex] != -1) {
-						transitionRow = agentTransitionTable.get(transitionRow[charIndex]);
-					}
-				}//for
-
-				//Tack the goal state on the end to complete the plan
-				plan.add(new Episode(UNKNOWN_COMMAND, sensorValue, episodeState));
-
-				//Voila!
-				currentPlan = plan;
-
-				//Any valid plan must have at least two steps
-				if (plan.size() < 2) {
-					currentPlan = null;
-				}
-			}//if
-		}//while
-
-		planIndex = -1;
-
-		//TODO: Debug
-		System.out.println("Plan from " + startID + " to " + targetID);
-		printPlan(currentPlan);
-		if (currentPlan == null) {
-			System.out.println("foo");
-		}
-		//if (currentPlan != null) System.exit(0);
-
-
-	}//makePlanToState
-
+			//Any valid plan must have at least two steps
+			if (plan.size() < 2) {
+				currentPlan = null;
+			}
+		}//if
+	}
 
 	/**
 	 * getFirstUnkown
@@ -744,7 +774,7 @@ public class StateMachineAgent {
 	/**
 	 * acceptCurrentHypothesis
 	 *
-	 * the current hypothetic equivlency is not believed to be true.  Update hte
+	 * the current hypothetic equivlency is not believed to be true.  Update the
 	 * list of known equivalents and also update the transition table
 
      From the journal:
@@ -1068,7 +1098,7 @@ public class StateMachineAgent {
 				}
 			}
 
-			//Magical reset if the goal has been reached
+			//Magical reset to the start if the goal has been reached
 			if (mergedSensors == GOAL) {
 				this.currentState = INIT_STATE;
 				row[commandIndex] = GOAL_STATE;
@@ -1081,6 +1111,7 @@ public class StateMachineAgent {
 			
 			//TODO: REMOVE (DEBUG)
 			printStateMachine();
+			System.out.println("Current Episodes:");
 			System.out.print("  ");
 			for(int i = 0; i < this.episodicMemory.size(); ++i) {
 				System.out.print("" + i + "        ");
@@ -1171,7 +1202,7 @@ public class StateMachineAgent {
 
 
 		ofSPECTRE.mapStateMachine();
-		//ofSPECTRE.best.printpath();
+		ofSPECTRE.best.printpath();
 		ofSPECTRE.episodicMemory = new ArrayList<Episode>();
 
 	}

@@ -1,4 +1,3 @@
-package stateMachineAgent;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -222,7 +221,8 @@ public class StateMachineEnvironment {
 	 */
 	public boolean[] tick(char move) {
 		// An array of booleans to keep track of the agents
-		// two sensors
+		// two sensors. The first represents if he is in a new
+		// state and the second represents if he is at the goal
 		boolean[] sensors = {false, false};
 		int newState = transition[currentState][findAlphabetIndex(move)];
 		
