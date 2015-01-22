@@ -552,9 +552,6 @@ public class StateMachineAgent {
 			//Grab the element at the front of the queue
 			currState = queue.remove(0);
 
-			System.out.println("currState=" + currState);
-
-
 			//Move through each state that doesn't have a path yet. Find the
 			//transition from that state to the current state.
 			for (int i = 1; i < agentTransitionTable.size(); i++) {
@@ -581,7 +578,7 @@ public class StateMachineAgent {
 			if (! paths[startID].equals("")) break;
 		}//while
 	}
-	
+
 	/**
 	 * parsePathToPlan
 	 *
