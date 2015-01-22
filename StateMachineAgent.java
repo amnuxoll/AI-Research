@@ -1,5 +1,6 @@
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.Vector;
 
@@ -62,6 +63,8 @@ public class StateMachineAgent {
 	//DEBUG
 	int reorientFailures = 0;
 	int resetCount = 0;
+	//specify path to take for testing
+	ArrayList<Character> testPath = new ArrayList<Character>(Arrays.asList('a', 'b', 'b'));
 
 	/**
 	 * The constructor for the agent simply initializes it's instance variables
@@ -90,49 +93,6 @@ public class StateMachineAgent {
 		agentTransitionTable.add(zeroRow);
 		agentTransitionTable.add(firstState);
 		possibleBest = new ArrayList<Character>();
-	}
-
-	/**
-	 * Runs through the "Brute Force" algorithm for the agent, setting the
-	 * "best" passphrase to the result
-	 */
-	public void bruteForce() {
-		// Generate an initial path
-		generatePath();
-
-		// DEBUG: try the path that was successful (sanity check)
-		//tryPath(best);
-		//best.printpath();
-
-		// Trim moves off the successful path until we only have the
-		// necessary moves remaining. Make this the new best path
-		best = trimPath(best);
-
-		// // DEBUG: Print out what the agent has determined the shortests path is
-		//best.printpath();
-	}
-
-	/**
-	 * Guesses randomly until a path to the goal is generated
-	 * 
-	 * @return
-	 * 		The path to the goal that was found
-	 */
-	public Path generatePath() {
-		ArrayList<Character> randomPath = new ArrayList<Character>();
-
-		//Use our reset method to make random actions until we reach the goal
-		reset();
-		resetCount++;
-
-		//Pull the episodes we've just created out of memory and parse them into
-		//a path
-		for (int i = 0; i < episodicMemory.size(); i++){
-			randomPath.add(i, episodicMemory.get(i).command);
-		}
-
-		best = new Path(randomPath);
-		return best;
 	}
 
 	/**
@@ -263,6 +223,21 @@ public class StateMachineAgent {
 	public char generateRandomAction() {
 		Random random = new Random();
 		return alphabet[random.nextInt(alphabet.length)];
+	}
+
+	/**
+	 * Uses testPath arraylist to start agent on a specific path
+	 *
+	 * @return next char in the testPath
+	 */
+	private char testDefinedPath() {
+		//precaution to never send null char
+		if (testPath.size() != 0) return testPath.remove(0);
+		//if that wasn't hit something went wrong continue with a random action and alert user
+		else {
+			System.out.println("WARNING: your test path is out of commands and hasn't reached the goal, executing random action");
+			return generateRandomAction();
+		}
 	}
 
 
@@ -700,6 +675,10 @@ public class StateMachineAgent {
 		//If I've never found a path to the goal I can only act randomly until I
 		//find the goal
 		if (best == null) {
+			//if we're testing, set boolean to true to use a predefined path
+			//otherwise proceed as expected
+			if (true) return testDefinedPath();
+
 			return generateRandomAction();
 		}
 
