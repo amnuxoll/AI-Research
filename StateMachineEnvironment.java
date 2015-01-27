@@ -31,7 +31,7 @@ public class StateMachineEnvironment {
 	private static final int IS_NEW_STATE = 0;
 	private static final int IS_GOAL = 1;
 
-    
+
 	private int[][] transition;
 	private char[] alphabet;
 	private String[] paths;
@@ -358,5 +358,9 @@ public class StateMachineEnvironment {
     public char[] getAlphabet() {
         return alphabet;
     }
-    
+
+	public int[][] getTransition() {
+		return transition;
+	}
+
 }

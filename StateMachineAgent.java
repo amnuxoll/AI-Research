@@ -63,8 +63,9 @@ public class StateMachineAgent {
 	//DEBUG
 	int reorientFailures = 0;
 	int resetCount = 0;
-	//specify path to take for testing
-	ArrayList<Character> testPath = new ArrayList<Character>(Arrays.asList('a', 'b', 'b'));
+	//specify path to take for testing if boolean is true
+	ArrayList<Character> testPath = new ArrayList<Character>(Arrays.asList('b', 'b'));
+	boolean useDefinedPath = true;
 
 	/**
 	 * The constructor for the agent simply initializes it's instance variables
@@ -305,7 +306,7 @@ public class StateMachineAgent {
 	 * Continually makes moves until the state machine has been mapped
 	 * 
 	 */
-	private void mapStateMachine() {
+	void mapStateMachine() {
 		char currCommand;
 		while (!mappingComplete()) {
 			currCommand = selectNextCommand();
@@ -677,7 +678,7 @@ public class StateMachineAgent {
 		if (best == null) {
 			//if we're testing, set boolean to true to use a predefined path
 			//otherwise proceed as expected
-			if (true) return testDefinedPath();
+			if (useDefinedPath) return testDefinedPath();
 
 			return generateRandomAction();
 		}
@@ -1227,6 +1228,14 @@ public class StateMachineAgent {
 			System.out.print(ep + ",");
 		}//for
 		System.out.println();
+	}
+
+	public StateMachineEnvironment getEnv() {
+		return env;
+	}
+
+	public ArrayList<int[]> getNonEquivalentStates() {
+		return nonEquivalentStates;
 	}
 
 
