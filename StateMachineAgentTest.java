@@ -35,7 +35,31 @@ public class StateMachineAgentTest extends TestCase {
         StateMachineAgent gilligan = new StateMachineAgent();
         gilligan.mapStateMachine();
 
+        //determine size of agents table ignoring deleted states
+        int agentSize = 0;
+        for (int i = 0; i < gilligan.getAgentTransitionTable().size(); i++) {
+            if (gilligan.getAgentTransitionTable().get(i)[0] != StateMachineAgent.DELETED) {
+                agentSize++;
+            }
+        }
+
         //check equality (size is all that matter)
-        assertEquals(gilligan.getEnv().getTransition().length, gilligan.getNonEquivalentStates().size() + 1);//plus one for goal
+        assertEquals(gilligan.getEnv().getTransition().length, agentSize);
+    }
+
+    /**
+     * testBestPath
+     *
+     * tests to see if the agent's best path is actually correct
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testBestPath() throws Exception {
+        //have agent create paths
+        StateMachineAgent gilligan = new StateMachineAgent();
+        gilligan.mapStateMachine();
+
+        assertEquals(gilligan.getEnv().getPaths()[0], gilligan.getBest().toString());
     }
 }

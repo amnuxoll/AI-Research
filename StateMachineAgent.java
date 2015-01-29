@@ -306,7 +306,7 @@ public class StateMachineAgent {
 	 * Continually makes moves until the state machine has been mapped
 	 * 
 	 */
-	void mapStateMachine() {
+	protected void mapStateMachine() {
 		char currCommand;
 		while (!mappingComplete()) {
 			currCommand = selectNextCommand();
@@ -1230,13 +1230,16 @@ public class StateMachineAgent {
 		System.out.println();
 	}
 
-	public StateMachineEnvironment getEnv() {
+	protected StateMachineEnvironment getEnv() {
 		return env;
 	}
 
-	public ArrayList<int[]> getNonEquivalentStates() {
-		return nonEquivalentStates;
+	protected ArrayList<int[]> getAgentTransitionTable() {
+		return agentTransitionTable;
 	}
 
+    protected Path getBest() {
+        return best;
+    }
 
 }//class StateMachineAgent
