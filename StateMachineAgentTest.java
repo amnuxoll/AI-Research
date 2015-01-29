@@ -60,6 +60,8 @@ public class StateMachineAgentTest extends TestCase {
         StateMachineAgent gilligan = new StateMachineAgent();
         gilligan.mapStateMachine();
 
+        //the env has many paths, only use the first (zeroith) since the others seem to be wrong
+        //this is probably a misunderstanding or a bug
         assertEquals(gilligan.getEnv().getPaths()[0], gilligan.getBest().toString());
     }
 }
